@@ -1,0 +1,31 @@
+item_id,item_name,category_id,base_price,base_cost,is_vegetarian,category_name,category_description
+1,Paneer Tikka,1,280,90,Yes,Starters,Appetizers and soups
+2,Chicken Wings,1,320,110,No,Starters,Appetizers and soups
+3,Veg Spring Rolls,1,220,65,Yes,Starters,Appetizers and soups
+4,Fish Tacos,1,350,130,No,Starters,Appetizers and soups
+5,Soup of the Day,1,150,45,Yes,Starters,Appetizers and soups
+6,Butter Chicken,2,420,140,No,Main Course,"Rice, pasta, curries, grills"
+7,Dal Makhani,2,320,80,Yes,Main Course,"Rice, pasta, curries, grills"
+8,Grilled Salmon,2,650,220,No,Main Course,"Rice, pasta, curries, grills"
+9,Pasta Arrabiata,2,380,95,Yes,Main Course,"Rice, pasta, curries, grills"
+10,Lamb Biryani,2,520,180,No,Main Course,"Rice, pasta, curries, grills"
+11,Veg Biryani,2,380,100,Yes,Main Course,"Rice, pasta, curries, grills"
+12,Pizza Margherita,2,340,85,Yes,Main Course,"Rice, pasta, curries, grills"
+13,Chicken Tikka Masala,2,440,150,No,Main Course,"Rice, pasta, curries, grills"
+14,Chocolate Lava Cake,3,280,70,Yes,Desserts,"Sweets, ice creams, pastries"
+15,Tiramisu,3,300,90,Yes,Desserts,"Sweets, ice creams, pastries"
+16,Gulab Jamun,3,160,40,Yes,Desserts,"Sweets, ice creams, pastries"
+17,Ice Cream Sundae,3,220,55,Yes,Desserts,"Sweets, ice creams, pastries"
+18,Fresh Lime Soda,4,80,15,Yes,Beverages,"Juices, mocktails, hot drinks"
+19,Mango Lassi,4,120,30,Yes,Beverages,"Juices, mocktails, hot drinks"
+20,Cold Coffee,4,150,35,Yes,Beverages,"Juices, mocktails, hot drinks"
+21,Masala Chai,4,60,12,Yes,Beverages,"Juices, mocktails, hot drinks"
+22,Orange Juice,4,100,20,Yes,Beverages,"Juices, mocktails, hot drinks"
+23,Family Feast,5,1200,420,No,Combos,Value combo meals
+24,Veg Combo Meal,5,480,160,Yes,Combos,Value combo meals
+25,Couple Dinner,5,900,300,No,Combos,Value combo meals
+26,Chef's Special Curry,6,580,200,No,Specials,Chef specials and seasonal items
+27,Truffle Mushroom Risotto,6,620,190,Yes,Specials,Chef specials and seasonal items
+28,Seared Duck Breast,6,750,270,No,Specials,Chef specials and seasonal items
+29,Quinoa Salad,6,390,110,Yes,Specials,Chef specials and seasonal items
+30,Lobster Thermidor,6,1800,700,No,Specials,Chef specials and seasonal items

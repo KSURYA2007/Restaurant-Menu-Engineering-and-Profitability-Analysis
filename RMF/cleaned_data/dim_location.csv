@@ -1,0 +1,6 @@
+location_id,branch_name,city,region,seating_cap,opened_date
+1,Downtown,Mumbai,West,120,2019-03-01
+2,Airport,Delhi,North,80,2020-06-15
+3,Mall,Bangalore,South,200,2018-11-01
+4,Suburb,Chennai,South,90,2021-01-10
+5,Beach,Goa,West,60,2021-07-05

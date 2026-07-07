@@ -1,0 +1,31 @@
+item_id,units_sold,gross_revenue,total_discount,net_revenue,total_cogs,total_profit,avg_rating,item_name,category_id,base_price,base_cost,is_vegetarian,category_name,category_description,total_quantity_sold,unit_contribution_margin,menu_category,realized_margin_pct,unit_margin
+1,2764,826524.19,20456.05,806068.15,249710.46,556357.71,4.04,Paneer Tikka,1,280,90,Yes,Starters,Appetizers and soups,2764,201.29,Dog,69.02,201.29
+2,3934,1343076.6,40087.26,1302989.33,432962.63,870026.7,4.08,Chicken Wings,1,320,110,No,Starters,Appetizers and soups,3934,221.16,Dog,66.77,221.16
+3,4934,1156026.1,30448.75,1125577.38,321114.46,804462.93,4.08,Veg Spring Rolls,1,220,65,Yes,Starters,Appetizers and soups,4934,163.04,Plowhorse,71.47,163.04
+4,2110,783116.29,18807.94,764308.36,274498.34,489810.02,4.15,Fish Tacos,1,350,130,No,Starters,Appetizers and soups,2110,232.14,Dog,64.09,232.14
+5,2850,455229.34,12842.16,442387.25,127991.41,314395.83,4.1,Soup of the Day,1,150,45,Yes,Starters,Appetizers and soups,2850,110.31,Dog,71.07,110.31
+6,7479,3350609.35,80071.03,3270538.26,1047738.06,2222800.19,4.08,Butter Chicken,2,420,140,No,Main Course,"Rice, pasta, curries, grills",7479,297.21,Plowhorse,67.96,297.21
+7,5751,1966034.74,51148.15,1914886.62,461041.81,1453844.83,4.12,Dal Makhani,2,320,80,Yes,Main Course,"Rice, pasta, curries, grills",5751,252.8,Plowhorse,75.92,252.8
+8,2901,2007906.03,60903.8,1947002.25,637669.99,1309332.25,4.08,Grilled Salmon,2,650,220,No,Main Course,"Rice, pasta, curries, grills",2901,451.34,Puzzle,67.25,451.34
+9,3913,1587173.32,44432.54,1542740.77,371398.52,1171342.25,4.06,Pasta Arrabiata,2,380,95,Yes,Main Course,"Rice, pasta, curries, grills",3913,299.35,Dog,75.93,299.35
+10,4724,2612311.11,65241.97,2547069.18,847578.32,1699490.85,4.08,Lamb Biryani,2,520,180,No,Main Course,"Rice, pasta, curries, grills",4724,359.76,Star,66.72,359.76
+11,6314,2552901.66,66408.45,2486493.22,631090.58,1855402.65,4.11,Veg Biryani,2,380,100,Yes,Main Course,"Rice, pasta, curries, grills",6314,293.86,Plowhorse,74.62,293.86
+12,7982,2892708.58,76216.09,2816492.5,679789.29,2136703.23,4.11,Pizza Margherita,2,340,85,Yes,Main Course,"Rice, pasta, curries, grills",7982,267.69,Plowhorse,75.86,267.69
+13,6490,3046085.57,72237.79,2973847.76,974104.4,1999743.4,4.1,Chicken Tikka Masala,2,440,150,No,Main Course,"Rice, pasta, curries, grills",6490,308.13,Star,67.24,308.13
+14,3827,1140198.2,29000.84,1111197.42,268465.93,842731.52,4.13,Chocolate Lava Cake,3,280,70,Yes,Desserts,"Sweets, ice creams, pastries",3827,220.21,Dog,75.84,220.21
+15,3103,995300.57,23655.12,971645.45,278618.55,693026.9,4.1,Tiramisu,3,300,90,Yes,Desserts,"Sweets, ice creams, pastries",3103,223.34,Dog,71.33,223.34
+16,4926,841088.7,23247.11,817841.59,197351.56,620490.05,4.09,Gulab Jamun,3,160,40,Yes,Desserts,"Sweets, ice creams, pastries",4926,125.96,Plowhorse,75.87,125.96
+17,4010,941080.32,25594.56,915485.78,220124.66,695361.09,4.06,Ice Cream Sundae,3,220,55,Yes,Desserts,"Sweets, ice creams, pastries",4010,173.41,Dog,75.96,173.41
+18,5350,456320.52,11805.58,444514.91,80337.74,364177.16,4.08,Fresh Lime Soda,4,80,15,Yes,Beverages,"Juices, mocktails, hot drinks",5350,68.07,Plowhorse,81.93,68.07
+19,6714,856604.15,22788.02,833816.17,201076.84,632739.35,4.11,Mango Lassi,4,120,30,Yes,Beverages,"Juices, mocktails, hot drinks",6714,94.24,Plowhorse,75.88,94.24
+20,4968,794905.72,21981.59,772924.12,173886.26,599037.87,4.09,Cold Coffee,4,150,35,Yes,Beverages,"Juices, mocktails, hot drinks",4968,120.58,Plowhorse,77.5,120.58
+21,7437,476350.45,11993.95,464356.51,89043.29,375313.23,4.13,Masala Chai,4,60,12,Yes,Beverages,"Juices, mocktails, hot drinks",7437,50.47,Plowhorse,80.82,50.47
+22,3914,417161.21,9962.63,407198.61,78598.72,328599.91,4.1,Orange Juice,4,100,20,Yes,Beverages,"Juices, mocktails, hot drinks",3914,83.96,Dog,80.7,83.96
+23,4680,5975131.65,158163.85,5816967.81,1970202.12,3846765.68,4.11,Family Feast,5,1200,420,No,Combos,Value combo meals,4680,821.96,Star,66.13,821.96
+24,7404,3791826.05,111991.77,3679834.35,1182429.41,2497404.94,4.05,Veg Combo Meal,5,480,160,Yes,Combos,Value combo meals,7404,337.3,Star,67.87,337.3
+25,5867,5633225.21,179581.26,5453644.0,1765886.72,3687757.31,4.11,Couple Dinner,5,900,300,No,Combos,Value combo meals,5867,628.56,Star,67.62,628.56
+26,3120,1937608.11,59424.26,1878183.88,623411.01,1254772.9,4.02,Chef's Special Curry,6,580,200,No,Specials,Chef specials and seasonal items,3120,402.17,Puzzle,66.81,402.17
+27,3884,2576128.17,61392.86,2514735.31,738984.76,1775750.55,4.06,Truffle Mushroom Risotto,6,620,190,Yes,Specials,Chef specials and seasonal items,3884,457.2,Puzzle,70.61,457.2
+28,1900,1516773.76,39858.99,1476914.78,511983.63,964931.16,4.09,Seared Duck Breast,6,750,270,No,Specials,Chef specials and seasonal items,1900,507.86,Puzzle,65.33,507.86
+29,2894,1205749.74,34653.94,1171095.79,318231.12,852864.63,4.13,Quinoa Salad,6,390,110,Yes,Specials,Chef specials and seasonal items,2894,294.7,Dog,72.83,294.7
+30,1007,1925571.27,44776.81,1880794.44,704966.33,1175828.11,4.04,Lobster Thermidor,6,1800,700,No,Specials,Chef specials and seasonal items,1007,1167.65,Puzzle,62.52,1167.65

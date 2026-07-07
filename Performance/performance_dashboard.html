@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culinary Portfolio Performance & Sales Analysis Dashboard</title>
+    
+    <!-- Outfit & Inter Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-base: #0b0f19;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --bg-card-hover: rgba(17, 24, 39, 0.9);
+            --border-card: rgba(255, 255, 255, 0.06);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            
+            --accent-blue: #3b82f6;
+            --accent-teal: #0d9488;
+            --accent-rose: #f43f5e;
+            --accent-emerald: #10b981;
+            --accent-yellow: #eab308;
+            --accent-indigo: #6366f1;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 40%),
+                radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.1) 0px, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+        
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-panel:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(17, 24, 39, 0.5);
+            border-bottom: 1px solid var(--border-card);
+            margin: -24px -24px 0 -24px;
+            backdrop-filter: blur(8px);
+        }
+        
+        header h1 {
+            font-size: 26px;
+            background: linear-gradient(to right, #fff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+            padding: 10px 22px;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .tab-btn.active {
+            background: var(--accent-indigo);
+            color: white;
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+        }
+        
+        .dashboard-view {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .dashboard-view.active {
+            display: flex;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        
+        .kpi-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-indigo);
+        }
+        .kpi-card.emerald::before { background: var(--accent-emerald); }
+        .kpi-card.teal::before { background: var(--accent-teal); }
+        .kpi-card.rose::before { background: var(--accent-rose); }
+        
+        .kpi-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+        
+        th, td {
+            padding: 11px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        
+        .badge.veg {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge.nonveg {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+        
+        .toggle-btn-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .toggle-btn.active {
+            background: var(--accent-indigo);
+            color: white;
+            border-color: var(--accent-indigo);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Culinary Performance & Sales Analysis</h1>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Portfolio Health, Price Elasticity, & Channel Profitability Drivers (₹ Currency Model)</p>
+        </div>
+        <div style="font-size: 14px; text-align: right; color: var(--text-secondary);">
+            <div>Master Dataset: <span style="color: var(--accent-emerald); font-weight: 600;">Verified Active</span></div>
+            <div style="font-size: 11px; margin-top: 4px;">Items Analyzed: 30 Menu Items</div>
+        </div>
+    </header>
+
+    <div class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('overview')">Portfolio Overview</button>
+        <button class="tab-btn" onclick="switchTab('rankings')">Product Performance Rankings</button>
+        <button class="tab-btn" onclick="switchTab('drivers')">Sales Drivers & Elasticity</button>
+    </div>
+
+    <!-- VIEW 1: OVERVIEW -->
+    <div id="view-overview" class="dashboard-view active">
+        <!-- KPIs -->
+        <div class="grid-4">
+            <div class="glass-panel kpi-card">
+                <div class="kpi-title">Total Revenue</div>
+                <div class="kpi-value" id="kpi-rev">₹0</div>
+            </div>
+            <div class="glass-panel kpi-card emerald">
+                <div class="kpi-title">Total Cumulative Profit</div>
+                <div class="kpi-value" id="kpi-profit">₹0</div>
+            </div>
+            <div class="glass-panel kpi-card teal">
+                <div class="kpi-title">Portfolio Margin %</div>
+                <div class="kpi-value" id="kpi-margin">0.0%</div>
+            </div>
+            <div class="glass-panel kpi-card rose">
+                <div class="kpi-title">Most Profitable Product</div>
+                <div class="kpi-value" id="kpi-best-prod" style="font-size: 18px; margin-top: 4px;">Product</div>
+                <p id="kpi-best-prod-val" style="font-size: 11px; color: var(--text-secondary);">₹0 Profit</p>
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <!-- Food Category sales/profit -->
+            <div class="glass-panel">
+                <h3>Food Category Revenue & Profit Contributions</h3>
+                <div class="chart-container">
+                    <canvas id="chart-category-perf"></canvas>
+                </div>
+            </div>
+            
+            <!-- Veg vs Non-veg breakdown -->
+            <div class="glass-panel">
+                <h3>Portfolio Profit Breakdown: Veg vs. Non-Veg</h3>
+                <div class="chart-container">
+                    <canvas id="chart-veg-share"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: RANKINGS -->
+    <div id="view-rankings" class="dashboard-view">
+        <div class="toggle-btn-container">
+            <button class="toggle-btn active" id="toggle-profit-btn" onclick="toggleRankingView('profit')">Rank by Total Profit</button>
+            <button class="toggle-btn" id="toggle-qty-btn" onclick="toggleRankingView('qty')">Rank by Sales Volume (Qty)</button>
+        </div>
+        
+        <div class="grid-2">
+            <!-- Top perform table -->
+            <div class="glass-panel">
+                <h3 id="rank-top-title">Top 5 Performing Products</h3>
+                <p style="color: var(--text-secondary); font-size: 12px;" id="rank-top-desc">Ranked by overall profitability</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Units Sold</th>
+                                <th>Revenue</th>
+                                <th>Profit</th>
+                                <th>Margin %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rank-top-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Bottom perform table -->
+            <div class="glass-panel">
+                <h3 id="rank-bottom-title">Bottom 5 Performing Products</h3>
+                <p style="color: var(--text-secondary); font-size: 12px;" id="rank-bottom-desc">Ranked by lowest profitability</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Units Sold</th>
+                                <th>Revenue</th>
+                                <th>Profit</th>
+                                <th>Margin %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rank-bottom-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-panel">
+            <h3>Portfolio Optimization Insights</h3>
+            <ul style="margin-left: 18px; font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; line-height: 1.4; margin-top: 10px;">
+                <li><strong>Profit concentration</strong>: The top 5 profitable items contribute to more than 35% of total operating profits, highlighting the importance of menu consistency for these items.</li>
+                <li><strong>Bottom drag</strong>: The bottom items suffer from high raw food cost fractions (COGS ratio) and should either be re-priced (+5% to +10%) or replaced with higher margin alternatives.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- VIEW 3: DRIVERS & HEALTH -->
+    <div id="view-drivers" class="dashboard-view">
+        <div class="grid-2">
+            <!-- Channel Performance -->
+            <div class="glass-panel">
+                <h3>Order Type Profitability Channels</h3>
+                <div class="chart-container">
+                    <canvas id="chart-order-channel"></canvas>
+                </div>
+            </div>
+            
+            <!-- Pricing elasticity scatter -->
+            <div class="glass-panel">
+                <h3>Menu Pricing vs. Demand (Quantity Sold)</h3>
+                <p style="color: var(--text-secondary); font-size: 11px; margin-bottom: 10px;">Price elasticity visualization. Higher pricing vs. volume elasticity.</p>
+                <div class="chart-container">
+                    <canvas id="chart-elasticity-scatter"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid-3">
+            <!-- Seating capacity utilisation -->
+            <div class="glass-panel">
+                <h3>Branch Seating Leverage</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Seating Cap</th>
+                                <th>Profit / Seat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seat-table-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Payment Channel sales -->
+            <div class="glass-panel">
+                <h3>Payment Driver Share</h3>
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="chart-payment-driver"></canvas>
+                </div>
+            </div>
+            
+            <!-- Discount impact -->
+            <div class="glass-panel">
+                <h3>Discount Impact Profile</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Discount</th>
+                                <th>Tx Count</th>
+                                <th>Avg Qty / Tx</th>
+                                <th>Avg Profit / Tx</th>
+                            </tr>
+                        </thead>
+                        <tbody id="discount-table-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const perfData = {
+    "kpis": {
+        "total_revenue": 54551551.95,
+        "total_profit": 38091265.2,
+        "overall_margin": 69.82618062802887,
+        "best_product": "Family Feast",
+        "best_product_profit": 3846765.68,
+        "worst_product": "Soup of the Day",
+        "worst_product_profit": 314395.83
+    },
+    "category_stats": [
+        {
+            "category_name": "Beverages",
+            "units_sold": 28383,
+            "net_revenue": 2922810.32,
+            "total_profit": 2299867.52,
+            "margin_pct": 78.69
+        },
+        {
+            "category_name": "Combos",
+            "units_sold": 17951,
+            "net_revenue": 14950446.16,
+            "total_profit": 10031927.93,
+            "margin_pct": 67.1
+        },
+        {
+            "category_name": "Desserts",
+            "units_sold": 15866,
+            "net_revenue": 3816170.2399999998,
+            "total_profit": 2851609.56,
+            "margin_pct": 74.72
+        },
+        {
+            "category_name": "Main Course",
+            "units_sold": 45554,
+            "net_revenue": 19499070.56,
+            "total_profit": 13848659.65,
+            "margin_pct": 71.02
+        },
+        {
+            "category_name": "Specials",
+            "units_sold": 12805,
+            "net_revenue": 8921724.2,
+            "total_profit": 6024147.35,
+            "margin_pct": 67.52
+        },
+        {
+            "category_name": "Starters",
+            "units_sold": 16592,
+            "net_revenue": 4441330.47,
+            "total_profit": 3035053.19,
+            "margin_pct": 68.34
+        }
+    ],
+    "top_profit_items": [
+        {
+            "item_name": "Family Feast",
+            "category_name": "Combos",
+            "units_sold": 4680,
+            "net_revenue": 5816967.81,
+            "total_profit": 3846765.68,
+            "realized_margin_pct": 66.13
+        },
+        {
+            "item_name": "Couple Dinner",
+            "category_name": "Combos",
+            "units_sold": 5867,
+            "net_revenue": 5453644.0,
+            "total_profit": 3687757.31,
+            "realized_margin_pct": 67.62
+        },
+        {
+            "item_name": "Veg Combo Meal",
+            "category_name": "Combos",
+            "units_sold": 7404,
+            "net_revenue": 3679834.35,
+            "total_profit": 2497404.94,
+            "realized_margin_pct": 67.87
+        },
+        {
+            "item_name": "Butter Chicken",
+            "category_name": "Main Course",
+            "units_sold": 7479,
+            "net_revenue": 3270538.26,
+            "total_profit": 2222800.19,
+            "realized_margin_pct": 67.96
+        },
+        {
+            "item_name": "Pizza Margherita",
+            "category_name": "Main Course",
+            "units_sold": 7982,
+            "net_revenue": 2816492.5,
+            "total_profit": 2136703.23,
+            "realized_margin_pct": 75.86
+        }
+    ],
+    "bottom_profit_items": [
+        {
+            "item_name": "Soup of the Day",
+            "category_name": "Starters",
+            "units_sold": 2850,
+            "net_revenue": 442387.25,
+            "total_profit": 314395.83,
+            "realized_margin_pct": 71.07
+        },
+        {
+            "item_name": "Orange Juice",
+            "category_name": "Beverages",
+            "units_sold": 3914,
+            "net_revenue": 407198.61,
+            "total_profit": 328599.91,
+            "realized_margin_pct": 80.7
+        },
+        {
+            "item_name": "Fresh Lime Soda",
+            "category_name": "Beverages",
+            "units_sold": 5350,
+            "net_revenue": 444514.91,
+            "total_profit": 364177.16,
+            "realized_margin_pct": 81.93
+        },
+        {
+            "item_name": "Masala Chai",
+            "category_name": "Beverages",
+            "units_sold": 7437,
+            "net_revenue": 464356.51,
+            "total_profit": 375313.23,
+            "realized_margin_pct": 80.82
+        },
+        {
+            "item_name": "Fish Tacos",
+            "category_name": "Starters",
+            "units_sold": 2110,
+            "net_revenue": 764308.36,
+            "total_profit": 489810.02,
+            "realized_margin_pct": 64.09
+        }
+    ],
+    "top_qty_items": [
+        {
+            "item_name": "Pizza Margherita",
+            "category_name": "Main Course",
+            "units_sold": 7982,
+            "net_revenue": 2816492.5,
+            "total_profit": 2136703.23,
+            "realized_margin_pct": 75.86
+        },
+        {
+            "item_name": "Butter Chicken",
+            "category_name": "Main Course",
+            "units_sold": 7479,
+            "net_revenue": 3270538.26,
+            "total_profit": 2222800.19,
+            "realized_margin_pct": 67.96
+        },
+        {
+            "item_name": "Masala Chai",
+            "category_name": "Beverages",
+            "units_sold": 7437,
+            "net_revenue": 464356.51,
+            "total_profit": 375313.23,
+            "realized_margin_pct": 80.82
+        },
+        {
+            "item_name": "Veg Combo Meal",
+            "category_name": "Combos",
+            "units_sold": 7404,
+            "net_revenue": 3679834.35,
+            "total_profit": 2497404.94,
+            "realized_margin_pct": 67.87
+        },
+        {
+            "item_name": "Mango Lassi",
+            "category_name": "Beverages",
+            "units_sold": 6714,
+            "net_revenue": 833816.17,
+            "total_profit": 632739.35,
+            "realized_margin_pct": 75.88
+        }
+    ],
+    "bottom_qty_items": [
+        {
+            "item_name": "Lobster Thermidor",
+            "category_name": "Specials",
+            "units_sold": 1007,
+            "net_revenue": 1880794.44,
+            "total_profit": 1175828.11,
+            "realized_margin_pct": 62.52
+        },
+        {
+            "item_name": "Seared Duck Breast",
+            "category_name": "Specials",
+            "units_sold": 1900,
+            "net_revenue": 1476914.78,
+            "total_profit": 964931.16,
+            "realized_margin_pct": 65.33
+        },
+        {
+            "item_name": "Fish Tacos",
+            "category_name": "Starters",
+            "units_sold": 2110,
+            "net_revenue": 764308.36,
+            "total_profit": 489810.02,
+            "realized_margin_pct": 64.09
+        },
+        {
+            "item_name": "Paneer Tikka",
+            "category_name": "Starters",
+            "units_sold": 2764,
+            "net_revenue": 806068.15,
+            "total_profit": 556357.71,
+            "realized_margin_pct": 69.02
+        },
+        {
+            "item_name": "Soup of the Day",
+            "category_name": "Starters",
+            "units_sold": 2850,
+            "net_revenue": 442387.25,
+            "total_profit": 314395.83,
+            "realized_margin_pct": 71.07
+        }
+    ],
+    "order_type_perf": [
+        {
+            "order_type": "Delivery",
+            "revenue": 18534999.58,
+            "profit": 12950380.13,
+            "orders": 10552,
+            "avg_qty_per_order": 2.61
+        },
+        {
+            "order_type": "Dine-In",
+            "revenue": 18034158.43,
+            "profit": 12585811.06,
+            "orders": 10481,
+            "avg_qty_per_order": 2.62
+        },
+        {
+            "order_type": "Takeaway",
+            "revenue": 17982393.94,
+            "profit": 12555074.01,
+            "orders": 10433,
+            "avg_qty_per_order": 2.61
+        }
+    ],
+    "payment_perf": [
+        {
+            "payment_method": "Card",
+            "revenue": 10884774.46,
+            "profit": 7594416.87,
+            "orders": 7535
+        },
+        {
+            "payment_method": "Cash",
+            "revenue": 10623752.62,
+            "profit": 7427131.12,
+            "orders": 7495
+        },
+        {
+            "payment_method": "Online",
+            "revenue": 11185219.68,
+            "profit": 7812563.26,
+            "orders": 7743
+        },
+        {
+            "payment_method": "UPI",
+            "revenue": 11026581.48,
+            "profit": 7694055.16,
+            "orders": 7651
+        },
+        {
+            "payment_method": "Wallet",
+            "revenue": 10831223.71,
+            "profit": 7563098.79,
+            "orders": 7622
+        }
+    ],
+    "branch_perf": [
+        {
+            "branch_name": "Airport",
+            "revenue": 11372300.62,
+            "profit": 8042737.22,
+            "orders": 2990,
+            "seating_cap": 80,
+            "profit_per_seat": 100534.22
+        },
+        {
+            "branch_name": "Beach",
+            "revenue": 11787398.62,
+            "profit": 8499134.71,
+            "orders": 3019,
+            "seating_cap": 60,
+            "profit_per_seat": 141652.25
+        },
+        {
+            "branch_name": "Downtown",
+            "revenue": 10886187.92,
+            "profit": 7545858.04,
+            "orders": 3008,
+            "seating_cap": 120,
+            "profit_per_seat": 62882.15
+        },
+        {
+            "branch_name": "Mall",
+            "revenue": 10965792.27,
+            "profit": 7692750.26,
+            "orders": 2992,
+            "seating_cap": 200,
+            "profit_per_seat": 38463.75
+        },
+        {
+            "branch_name": "Suburb",
+            "revenue": 9539872.52,
+            "profit": 6310784.97,
+            "orders": 2991,
+            "seating_cap": 90,
+            "profit_per_seat": 70119.83
+        }
+    ],
+    "discount_perf": [
+        {
+            "discount_pct": 0,
+            "transactions": 41835,
+            "avg_quantity_sold": 2.6,
+            "total_revenue": 44290794.39,
+            "total_profit": 31304498.07,
+            "avg_profit_per_tx": 748.28
+        },
+        {
+            "discount_pct": 5,
+            "transactions": 3780,
+            "avg_quantity_sold": 2.6,
+            "total_revenue": 3882403.92,
+            "total_profit": 2680081.34,
+            "avg_profit_per_tx": 709.02
+        },
+        {
+            "discount_pct": 10,
+            "transactions": 2606,
+            "avg_quantity_sold": 2.66,
+            "total_revenue": 2501358.31,
+            "total_profit": 1680146.66,
+            "avg_profit_per_tx": 644.72
+        },
+        {
+            "discount_pct": 15,
+            "transactions": 2138,
+            "avg_quantity_sold": 2.7,
+            "total_revenue": 2103798.59,
+            "total_profit": 1367768.96,
+            "avg_profit_per_tx": 639.74
+        },
+        {
+            "discount_pct": 20,
+            "transactions": 1024,
+            "avg_quantity_sold": 2.71,
+            "total_revenue": 927838.85,
+            "total_profit": 587740.65,
+            "avg_profit_per_tx": 573.97
+        },
+        {
+            "discount_pct": 25,
+            "transactions": 484,
+            "avg_quantity_sold": 2.57,
+            "total_revenue": 380966.64,
+            "total_profit": 231207.86,
+            "avg_profit_per_tx": 477.7
+        },
+        {
+            "discount_pct": 30,
+            "transactions": 516,
+            "avg_quantity_sold": 2.62,
+            "total_revenue": 425980.56,
+            "total_profit": 245524.01,
+            "avg_profit_per_tx": 475.82
+        },
+        {
+            "discount_pct": 60,
+            "transactions": 3,
+            "avg_quantity_sold": 2.33,
+            "total_revenue": 1256.29,
+            "total_profit": 424.18,
+            "avg_profit_per_tx": 141.39
+        },
+        {
+            "discount_pct": 61,
+            "transactions": 8,
+            "avg_quantity_sold": 2.25,
+            "total_revenue": 2772.82,
+            "total_profit": 731.97,
+            "avg_profit_per_tx": 91.5
+        },
+        {
+            "discount_pct": 62,
+            "transactions": 7,
+            "avg_quantity_sold": 2.0,
+            "total_revenue": 1686.77,
+            "total_profit": 462.77,
+            "avg_profit_per_tx": 66.11
+        },
+        {
+            "discount_pct": 64,
+            "transactions": 6,
+            "avg_quantity_sold": 2.0,
+            "total_revenue": 1312.55,
+            "total_profit": 334.83,
+            "avg_profit_per_tx": 55.8
+        },
+        {
+            "discount_pct": 65,
+            "transactions": 4,
+            "avg_quantity_sold": 2.0,
+            "total_revenue": 1872.77,
+            "total_profit": 307.58,
+            "avg_profit_per_tx": 76.9
+        },
+        {
+            "discount_pct": 66,
+            "transactions": 8,
+            "avg_quantity_sold": 2.5,
+            "total_revenue": 2612.67,
+            "total_profit": 163.88,
+            "avg_profit_per_tx": 20.48
+        },
+        {
+            "discount_pct": 67,
+            "transactions": 9,
+            "avg_quantity_sold": 6.11,
+            "total_revenue": 5171.49,
+            "total_profit": 846.01,
+            "avg_profit_per_tx": 94.0
+        },
+        {
+            "discount_pct": 68,
+            "transactions": 6,
+            "avg_quantity_sold": 2.0,
+            "total_revenue": 952.1,
+            "total_profit": 113.1,
+            "avg_profit_per_tx": 18.85
+        },
+        {
+            "discount_pct": 69,
+            "transactions": 5,
+            "avg_quantity_sold": 1.8,
+            "total_revenue": 650.41,
+            "total_profit": 29.34,
+            "avg_profit_per_tx": 5.87
+        },
+        {
+            "discount_pct": 70,
+            "transactions": 2,
+            "avg_quantity_sold": 2.0,
+            "total_revenue": 578.65,
+            "total_profit": -48.08,
+            "avg_profit_per_tx": -24.04
+        },
+        {
+            "discount_pct": 71,
+            "transactions": 5,
+            "avg_quantity_sold": 8.4,
+            "total_revenue": 2114.94,
+            "total_profit": 250.24,
+            "avg_profit_per_tx": 50.05
+        },
+        {
+            "discount_pct": 72,
+            "transactions": 2,
+            "avg_quantity_sold": 1.5,
+            "total_revenue": 214.25,
+            "total_profit": 49.92,
+            "avg_profit_per_tx": 24.96
+        },
+        {
+            "discount_pct": 73,
+            "transactions": 4,
+            "avg_quantity_sold": 3.0,
+            "total_revenue": 1633.72,
+            "total_profit": -98.34,
+            "avg_profit_per_tx": -24.58
+        },
+        {
+            "discount_pct": 74,
+            "transactions": 4,
+            "avg_quantity_sold": 1.75,
+            "total_revenue": 629.23,
+            "total_profit": -45.29,
+            "avg_profit_per_tx": -11.32
+        },
+        {
+            "discount_pct": 75,
+            "transactions": 4,
+            "avg_quantity_sold": 1.5,
+            "total_revenue": 327.66,
+            "total_profit": 10.49,
+            "avg_profit_per_tx": 2.62
+        },
+        {
+            "discount_pct": 76,
+            "transactions": 9,
+            "avg_quantity_sold": 4.11,
+            "total_revenue": 4064.28,
+            "total_profit": -1389.69,
+            "avg_profit_per_tx": -154.41
+        },
+        {
+            "discount_pct": 77,
+            "transactions": 7,
+            "avg_quantity_sold": 2.0,
+            "total_revenue": 1184.55,
+            "total_profit": -171.94,
+            "avg_profit_per_tx": -24.56
+        },
+        {
+            "discount_pct": 78,
+            "transactions": 6,
+            "avg_quantity_sold": 2.33,
+            "total_revenue": 742.01,
+            "total_profit": -91.4,
+            "avg_profit_per_tx": -15.23
+        },
+        {
+            "discount_pct": 79,
+            "transactions": 4,
+            "avg_quantity_sold": 2.0,
+            "total_revenue": 395.43,
+            "total_profit": -217.13,
+            "avg_profit_per_tx": -54.28
+        },
+        {
+            "discount_pct": 80,
+            "transactions": 6,
+            "avg_quantity_sold": 3.17,
+            "total_revenue": 1737.55,
+            "total_profit": -876.93,
+            "avg_profit_per_tx": -146.16
+        },
+        {
+            "discount_pct": 81,
+            "transactions": 5,
+            "avg_quantity_sold": 2.6,
+            "total_revenue": 485.08,
+            "total_profit": -148.48,
+            "avg_profit_per_tx": -29.7
+        },
+        {
+            "discount_pct": 82,
+            "transactions": 9,
+            "avg_quantity_sold": 2.11,
+            "total_revenue": 1365.85,
+            "total_profit": -735.57,
+            "avg_profit_per_tx": -81.73
+        },
+        {
+            "discount_pct": 83,
+            "transactions": 3,
+            "avg_quantity_sold": 3.67,
+            "total_revenue": 699.34,
+            "total_profit": -644.86,
+            "avg_profit_per_tx": -214.95
+        },
+        {
+            "discount_pct": 84,
+            "transactions": 1,
+            "avg_quantity_sold": 1.0,
+            "total_revenue": 47.96,
+            "total_profit": -51.77,
+            "avg_profit_per_tx": -51.77
+        },
+        {
+            "discount_pct": 85,
+            "transactions": 8,
+            "avg_quantity_sold": 2.62,
+            "total_revenue": 1108.53,
+            "total_profit": -1129.52,
+            "avg_profit_per_tx": -141.19
+        },
+        {
+            "discount_pct": 86,
+            "transactions": 6,
+            "avg_quantity_sold": 2.83,
+            "total_revenue": 1142.16,
+            "total_profit": -1256.53,
+            "avg_profit_per_tx": -209.42
+        },
+        {
+            "discount_pct": 87,
+            "transactions": 4,
+            "avg_quantity_sold": 1.75,
+            "total_revenue": 347.3,
+            "total_profit": -424.89,
+            "avg_profit_per_tx": -106.22
+        },
+        {
+            "discount_pct": 88,
+            "transactions": 2,
+            "avg_quantity_sold": 2.5,
+            "total_revenue": 413.54,
+            "total_profit": -664.19,
+            "avg_profit_per_tx": -332.1
+        },
+        {
+            "discount_pct": 89,
+            "transactions": 6,
+            "avg_quantity_sold": 2.5,
+            "total_revenue": 539.83,
+            "total_profit": -856.83,
+            "avg_profit_per_tx": -142.8
+        },
+        {
+            "discount_pct": 90,
+            "transactions": 5,
+            "avg_quantity_sold": 2.8,
+            "total_revenue": 350.96,
+            "total_profit": -575.22,
+            "avg_profit_per_tx": -115.04
+        }
+    ],
+    "veg_perf": [
+        {
+            "is_vegetarian": "No",
+            "items_count": 11,
+            "units_sold": 44212,
+            "net_revenue": 29312260.05,
+            "total_profit": 19521258.57,
+            "margin_pct": 66.6
+        },
+        {
+            "is_vegetarian": "Yes",
+            "items_count": 19,
+            "units_sold": 92939,
+            "net_revenue": 25239291.9,
+            "total_profit": 18570006.63,
+            "margin_pct": 73.58
+        }
+    ],
+    "pricing_vs_vol": [
+        {
+            "item_id": 1,
+            "item_name": "Paneer Tikka",
+            "category_name": "Starters",
+            "base_price": 280,
+            "units_sold": 2764,
+            "total_profit": 556357.71
+        },
+        {
+            "item_id": 2,
+            "item_name": "Chicken Wings",
+            "category_name": "Starters",
+            "base_price": 320,
+            "units_sold": 3934,
+            "total_profit": 870026.7
+        },
+        {
+            "item_id": 3,
+            "item_name": "Veg Spring Rolls",
+            "category_name": "Starters",
+            "base_price": 220,
+            "units_sold": 4934,
+            "total_profit": 804462.93
+        },
+        {
+            "item_id": 4,
+            "item_name": "Fish Tacos",
+            "category_name": "Starters",
+            "base_price": 350,
+            "units_sold": 2110,
+            "total_profit": 489810.02
+        },
+        {
+            "item_id": 5,
+            "item_name": "Soup of the Day",
+            "category_name": "Starters",
+            "base_price": 150,
+            "units_sold": 2850,
+            "total_profit": 314395.83
+        },
+        {
+            "item_id": 6,
+            "item_name": "Butter Chicken",
+            "category_name": "Main Course",
+            "base_price": 420,
+            "units_sold": 7479,
+            "total_profit": 2222800.19
+        },
+        {
+            "item_id": 7,
+            "item_name": "Dal Makhani",
+            "category_name": "Main Course",
+            "base_price": 320,
+            "units_sold": 5751,
+            "total_profit": 1453844.83
+        },
+        {
+            "item_id": 8,
+            "item_name": "Grilled Salmon",
+            "category_name": "Main Course",
+            "base_price": 650,
+            "units_sold": 2901,
+            "total_profit": 1309332.25
+        },
+        {
+            "item_id": 9,
+            "item_name": "Pasta Arrabiata",
+            "category_name": "Main Course",
+            "base_price": 380,
+            "units_sold": 3913,
+            "total_profit": 1171342.25
+        },
+        {
+            "item_id": 10,
+            "item_name": "Lamb Biryani",
+            "category_name": "Main Course",
+            "base_price": 520,
+            "units_sold": 4724,
+            "total_profit": 1699490.85
+        },
+        {
+            "item_id": 11,
+            "item_name": "Veg Biryani",
+            "category_name": "Main Course",
+            "base_price": 380,
+            "units_sold": 6314,
+            "total_profit": 1855402.65
+        },
+        {
+            "item_id": 12,
+            "item_name": "Pizza Margherita",
+            "category_name": "Main Course",
+            "base_price": 340,
+            "units_sold": 7982,
+            "total_profit": 2136703.23
+        },
+        {
+            "item_id": 13,
+            "item_name": "Chicken Tikka Masala",
+            "category_name": "Main Course",
+            "base_price": 440,
+            "units_sold": 6490,
+            "total_profit": 1999743.4
+        },
+        {
+            "item_id": 14,
+            "item_name": "Chocolate Lava Cake",
+            "category_name": "Desserts",
+            "base_price": 280,
+            "units_sold": 3827,
+            "total_profit": 842731.52
+        },
+        {
+            "item_id": 15,
+            "item_name": "Tiramisu",
+            "category_name": "Desserts",
+            "base_price": 300,
+            "units_sold": 3103,
+            "total_profit": 693026.9
+        },
+        {
+            "item_id": 16,
+            "item_name": "Gulab Jamun",
+            "category_name": "Desserts",
+            "base_price": 160,
+            "units_sold": 4926,
+            "total_profit": 620490.05
+        },
+        {
+            "item_id": 17,
+            "item_name": "Ice Cream Sundae",
+            "category_name": "Desserts",
+            "base_price": 220,
+            "units_sold": 4010,
+            "total_profit": 695361.09
+        },
+        {
+            "item_id": 18,
+            "item_name": "Fresh Lime Soda",
+            "category_name": "Beverages",
+            "base_price": 80,
+            "units_sold": 5350,
+            "total_profit": 364177.16
+        },
+        {
+            "item_id": 19,
+            "item_name": "Mango Lassi",
+            "category_name": "Beverages",
+            "base_price": 120,
+            "units_sold": 6714,
+            "total_profit": 632739.35
+        },
+        {
+            "item_id": 20,
+            "item_name": "Cold Coffee",
+            "category_name": "Beverages",
+            "base_price": 150,
+            "units_sold": 4968,
+            "total_profit": 599037.87
+        },
+        {
+            "item_id": 21,
+            "item_name": "Masala Chai",
+            "category_name": "Beverages",
+            "base_price": 60,
+            "units_sold": 7437,
+            "total_profit": 375313.23
+        },
+        {
+            "item_id": 22,
+            "item_name": "Orange Juice",
+            "category_name": "Beverages",
+            "base_price": 100,
+            "units_sold": 3914,
+            "total_profit": 328599.91
+        },
+        {
+            "item_id": 23,
+            "item_name": "Family Feast",
+            "category_name": "Combos",
+            "base_price": 1200,
+            "units_sold": 4680,
+            "total_profit": 3846765.68
+        },
+        {
+            "item_id": 24,
+            "item_name": "Veg Combo Meal",
+            "category_name": "Combos",
+            "base_price": 480,
+            "units_sold": 7404,
+            "total_profit": 2497404.94
+        },
+        {
+            "item_id": 25,
+            "item_name": "Couple Dinner",
+            "category_name": "Combos",
+            "base_price": 900,
+            "units_sold": 5867,
+            "total_profit": 3687757.31
+        },
+        {
+            "item_id": 26,
+            "item_name": "Chef's Special Curry",
+            "category_name": "Specials",
+            "base_price": 580,
+            "units_sold": 3120,
+            "total_profit": 1254772.9
+        },
+        {
+            "item_id": 27,
+            "item_name": "Truffle Mushroom Risotto",
+            "category_name": "Specials",
+            "base_price": 620,
+            "units_sold": 3884,
+            "total_profit": 1775750.55
+        },
+        {
+            "item_id": 28,
+            "item_name": "Seared Duck Breast",
+            "category_name": "Specials",
+            "base_price": 750,
+            "units_sold": 1900,
+            "total_profit": 964931.16
+        },
+        {
+            "item_id": 29,
+            "item_name": "Quinoa Salad",
+            "category_name": "Specials",
+            "base_price": 390,
+            "units_sold": 2894,
+            "total_profit": 852864.63
+        },
+        {
+            "item_id": 30,
+            "item_name": "Lobster Thermidor",
+            "category_name": "Specials",
+            "base_price": 1800,
+            "units_sold": 1007,
+            "total_profit": 1175828.11
+        }
+    ]
+};
+        
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+            
+            let activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            let targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+        }
+
+        // Currency/Number Formatter
+        const formatINR = (val) => {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+        };
+        
+        const formatInt = (val) => {
+            return new Intl.NumberFormat('en-IN').format(val);
+        };
+
+        // Set KPIs
+        document.getElementById('kpi-rev').innerText = formatINR(perfData.kpis.total_revenue);
+        document.getElementById('kpi-profit').innerText = formatINR(perfData.kpis.total_profit);
+        document.getElementById('kpi-margin').innerText = perfData.kpis.overall_margin.toFixed(2) + "%";
+        document.getElementById('kpi-best-prod').innerText = perfData.kpis.best_product;
+        document.getElementById('kpi-best-prod-val').innerText = formatINR(perfData.kpis.best_product_profit) + " Cumulative Profit";
+
+        // Build tables function
+        function populateRankings(topList, bottomList) {
+            const topTbody = document.getElementById('rank-top-tbody');
+            const bottomTbody = document.getElementById('rank-bottom-tbody');
+            
+            topTbody.innerHTML = "";
+            bottomTbody.innerHTML = "";
+            
+            topList.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${item.item_name}</td>
+                    <td>${item.category_name}</td>
+                    <td>${formatInt(item.units_sold)}</td>
+                    <td>${formatINR(item.net_revenue)}</td>
+                    <td style="font-weight:600; color: var(--accent-emerald)">${formatINR(item.total_profit)}</td>
+                    <td>${item.realized_margin_pct.toFixed(1)}%</td>
+                `;
+                topTbody.appendChild(tr);
+            });
+            
+            bottomList.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${item.item_name}</td>
+                    <td>${item.category_name}</td>
+                    <td>${formatInt(item.units_sold)}</td>
+                    <td>${formatINR(item.net_revenue)}</td>
+                    <td style="font-weight:600; color: var(--accent-rose)">${formatINR(item.total_profit)}</td>
+                    <td>${item.realized_margin_pct.toFixed(1)}%</td>
+                `;
+                bottomTbody.appendChild(tr);
+            });
+        }
+        
+        // Initial ranking table population (Profit)
+        populateRankings(perfData.top_profit_items, perfData.bottom_profit_items);
+
+        function toggleRankingView(viewType) {
+            const pBtn = document.getElementById('toggle-profit-btn');
+            const qBtn = document.getElementById('toggle-qty-btn');
+            
+            if (viewType === 'profit') {
+                pBtn.classList.add('active');
+                qBtn.classList.remove('active');
+                document.getElementById('rank-top-title').innerText = "Top 5 Performing Products";
+                document.getElementById('rank-top-desc').innerText = "Ranked by overall profitability";
+                document.getElementById('rank-bottom-title').innerText = "Bottom 5 Performing Products";
+                document.getElementById('rank-bottom-desc').innerText = "Ranked by lowest profitability";
+                populateRankings(perfData.top_profit_items, perfData.bottom_profit_items);
+            } else {
+                pBtn.classList.remove('active');
+                qBtn.classList.add('active');
+                document.getElementById('rank-top-title').innerText = "Top 5 High-Volume Products";
+                document.getElementById('rank-top-desc').innerText = "Ranked by total quantity sold";
+                document.getElementById('rank-bottom-title').innerText = "Bottom 5 Low-Volume Products";
+                document.getElementById('rank-bottom-desc').innerText = "Ranked by lowest quantity sold";
+                populateRankings(perfData.top_qty_items, perfData.bottom_qty_items);
+            }
+        }
+        
+        // Populate seating capacity
+        const seatTbody = document.getElementById('seat-table-tbody');
+        perfData.branch_perf.forEach(b => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">${b.branch_name}</td>
+                <td>${b.seating_cap} seats</td>
+                <td style="font-weight:600; color: var(--accent-emerald)">${formatINR(b.profit_per_seat)} / seat</td>
+            `;
+            seatTbody.appendChild(tr);
+        });
+        
+        // Populate discount impact
+        const discountTbody = document.getElementById('discount-table-tbody');
+        perfData.discount_perf.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">${d.discount_pct}% Off</td>
+                <td>${formatInt(d.transactions)}</td>
+                <td>${d.avg_quantity_sold.toFixed(2)} items</td>
+                <td style="font-weight:600; color: ${d.avg_profit_per_tx >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)'};">${formatINR(d.avg_profit_per_tx)}</td>
+            `;
+            discountTbody.appendChild(tr);
+        });
+
+        // ----------------------------------------------------
+        // CHARTS SETUP
+        // ----------------------------------------------------
+        
+        // 1. Food Category performance chart
+        const ctxCat = document.getElementById('chart-category-perf').getContext('2d');
+        new Chart(ctxCat, {
+            type: 'bar',
+            data: {
+                labels: perfData.category_stats.map(c => c.category_name),
+                datasets: [
+                    {
+                        label: 'Net Sales',
+                        data: perfData.category_stats.map(c => c.net_revenue),
+                        backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                    },
+                    {
+                        label: 'Profit',
+                        data: perfData.category_stats.map(c => c.total_profit),
+                        backgroundColor: 'rgba(20, 184, 166, 0.75)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#9ca3af' } } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#9ca3af' } }
+                }
+            }
+        });
+
+        // 2. Veg vs Non-Veg Doughnut Chart
+        const ctxVeg = document.getElementById('chart-veg-share').getContext('2d');
+        new Chart(ctxVeg, {
+            type: 'doughnut',
+            data: {
+                labels: perfData.veg_perf.map(v => v.is_vegetarian === 'Yes' ? 'Vegetarian' : 'Non-Vegetarian'),
+                datasets: [{
+                    data: perfData.veg_perf.map(v => v.total_profit),
+                    backgroundColor: ['#ef4444', '#10b981'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#9ca3af' } }
+                }
+            }
+        });
+
+        // 3. Order type performance bar chart
+        const ctxOrder = document.getElementById('chart-order-channel').getContext('2d');
+        new Chart(ctxOrder, {
+            type: 'bar',
+            data: {
+                labels: perfData.order_type_perf.map(o => o.order_type),
+                datasets: [
+                    {
+                        label: 'Revenue',
+                        data: perfData.order_type_perf.map(o => o.revenue),
+                        backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                    },
+                    {
+                        label: 'Profit',
+                        data: perfData.order_type_perf.map(o => o.profit),
+                        backgroundColor: 'rgba(139, 92, 246, 0.75)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#9ca3af' } } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#9ca3af' } }
+                }
+            }
+        });
+
+        // 4. Elasticity Scatter Plot
+        const ctxElasticity = document.getElementById('chart-elasticity-scatter').getContext('2d');
+        const scatterPoints = perfData.pricing_vs_vol.map(item => ({
+            x: item.base_price,
+            y: item.units_sold,
+            label: item.item_name,
+            profit: item.total_profit
+        }));
+
+        new Chart(ctxElasticity, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Menu Items',
+                    data: scatterPoints,
+                    backgroundColor: 'rgba(99, 102, 241, 0.85)',
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const raw = context.raw;
+                                return `${raw.label}: Price=₹${raw.x}, Qty=${raw.y}, Profit=${formatINR(raw.profit)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Base Menu Price (₹)', color: '#9ca3af' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Sales Volume (Units Sold)', color: '#9ca3af' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+
+        // 5. Payment Channel Doughnut
+        const ctxPay = document.getElementById('chart-payment-driver').getContext('2d');
+        new Chart(ctxPay, {
+            type: 'doughnut',
+            data: {
+                labels: perfData.payment_perf.map(p => p.payment_method),
+                datasets: [{
+                    data: perfData.payment_perf.map(p => p.revenue),
+                    backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#3b82f6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 9 } } }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

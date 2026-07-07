@@ -1,0 +1,2762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Command Center KPI Dashboard</title>
+    
+    <!-- Outfit & Inter Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-base: #090a0f;
+            --bg-card: rgba(17, 19, 28, 0.75);
+            --bg-card-hover: rgba(23, 26, 38, 0.9);
+            --border-card: rgba(255, 255, 255, 0.05);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            
+            --accent-blue: #3b82f6;
+            --accent-teal: #0d9488;
+            --accent-rose: #f43f5e;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-indigo: #6366f1;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 35%),
+                radial-gradient(at 100% 0%, rgba(13, 148, 136, 0.08) 0px, transparent 35%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+        
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-panel:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(17, 19, 28, 0.5);
+            border-bottom: 1px solid var(--border-card);
+            margin: -24px -24px 0 -24px;
+            backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+        
+        header h1 {
+            font-size: 26px;
+            background: linear-gradient(to right, #fff, #0d9488);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+            padding: 10px 22px;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        
+        .tab-btn.active {
+            background: var(--accent-teal);
+            color: white;
+            border-color: var(--accent-teal);
+            box-shadow: 0 0 16px rgba(13, 148, 136, 0.4);
+        }
+        
+        .dashboard-view {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .dashboard-view.active {
+            display: flex;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        
+        .grid-6 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .kpi-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-blue);
+        }
+        .kpi-card.teal::before { background: var(--accent-teal); }
+        .kpi-card.emerald::before { background: var(--accent-emerald); }
+        .kpi-card.rose::before { background: var(--accent-rose); }
+        .kpi-card.indigo::before { background: var(--accent-indigo); }
+        .kpi-card.amber::before { background: var(--accent-amber); }
+        
+        .kpi-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+        
+        th, td {
+            padding: 11px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .badge.star {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge.plowhorse {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .badge.puzzle {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .badge.dog {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Restaurant command Center</h1>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Strategic & Operational Performance KPI Dashboard (₹ Currency Model)</p>
+        </div>
+        <div style="font-size: 14px; text-align: right; color: var(--text-secondary);">
+            <div>Operating Branches: <span style="color: var(--accent-teal); font-weight: 600;">5 Active</span></div>
+            <div style="font-size: 11px; margin-top: 4px;">Audit Baseline: Centralized Master DB</div>
+        </div>
+    </header>
+
+    <div class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('finance')">Financial Command Center</button>
+        <button class="tab-btn" onclick="switchTab('menu')">Menu Engineering & BCG</button>
+        <button class="tab-btn" onclick="switchTab('operations')">Operations & Channels</button>
+        <button class="tab-btn" onclick="switchTab('customer')">Customer Dimensions</button>
+    </div>
+
+    <!-- VIEW 1: FINANCIAL COMMAND CENTER -->
+    <div id="view-finance" class="dashboard-view active">
+        <!-- KPIs -->
+        <div class="grid-6">
+            <div class="glass-panel kpi-card teal">
+                <div class="kpi-title">Net Revenue</div>
+                <div class="kpi-value" id="kpi-rev">₹0</div>
+            </div>
+            <div class="glass-panel kpi-card emerald">
+                <div class="kpi-title">Operating Profit</div>
+                <div class="kpi-value" id="kpi-profit">₹0</div>
+            </div>
+            <div class="glass-panel kpi-card teal">
+                <div class="kpi-title">Profit Margin %</div>
+                <div class="kpi-value" id="kpi-margin">0.0%</div>
+            </div>
+            <div class="glass-panel kpi-card indigo">
+                <div class="kpi-title">Total Orders</div>
+                <div class="kpi-value" id="kpi-orders">0</div>
+            </div>
+            <div class="glass-panel kpi-card blue">
+                <div class="kpi-title">Avg Order Value</div>
+                <div class="kpi-value" id="kpi-aov">₹0</div>
+            </div>
+            <div class="glass-panel kpi-card amber">
+                <div class="kpi-title">Avg Rating</div>
+                <div class="kpi-value" id="kpi-rating">0.0 ⭐</div>
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <!-- Monthly Trends -->
+            <div class="glass-panel">
+                <h3>Monthly Revenue & Profit Trends (MoM)</h3>
+                <div class="chart-container">
+                    <canvas id="chart-monthly-trend"></canvas>
+                </div>
+            </div>
+            
+            <!-- Category Breakdown -->
+            <div class="glass-panel">
+                <h3>Food Category Revenue vs. Margin Contribution</h3>
+                <div class="chart-container">
+                    <canvas id="chart-category-breakdown"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Branch Rankings -->
+        <div class="glass-panel">
+            <h3>Branch Performance Rankings & Seating Utilization</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Branch Name</th>
+                            <th>Total Revenue</th>
+                            <th>Operating Profit</th>
+                            <th>Total Orders</th>
+                            <th>Seating Capacity</th>
+                            <th>Revenue / Seat</th>
+                            <th>Profit / Seat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="branch-table-tbody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: MENU ENGINEERING & BCG -->
+    <div id="view-menu" class="dashboard-view">
+        <div class="grid-2">
+            <!-- BCG Scatter -->
+            <div class="glass-panel">
+                <h3>BCG Matrix Scatter Plot</h3>
+                <p style="color: var(--text-secondary); font-size: 11px; margin-top: 4px;">Menu items mapped by popularity (total sold) vs profitability (unit contribution margin).</p>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="chart-bcg-scatter"></canvas>
+                </div>
+            </div>
+            
+            <!-- BCG Matrix Summary & Breakdown -->
+            <div class="glass-panel">
+                <h3>Menu Engineering Classifications</h3>
+                <div style="display: flex; gap: 10px; margin-top: 15px; margin-bottom: 15px;">
+                    <div style="padding: 10px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 11px; color: var(--accent-emerald); font-weight:600; text-transform: uppercase;">Avg Qty Benchmark</div>
+                        <div style="font-size: 20px; font-weight:800; font-family:'Outfit';" id="bcg-bench-qty">0</div>
+                    </div>
+                    <div style="padding: 10px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 11px; color: var(--accent-blue); font-weight:600; text-transform: uppercase;">Avg Margin Benchmark</div>
+                        <div style="font-size: 20px; font-weight:800; font-family:'Outfit';" id="bcg-bench-margin">₹0</div>
+                    </div>
+                </div>
+                <div class="table-wrapper" style="max-height: 280px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Qty Sold</th>
+                                <th>Unit Margin</th>
+                                <th>BCG Segment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bcg-table-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: OPERATIONS & CHANNELS -->
+    <div id="view-operations" class="dashboard-view">
+        <div class="grid-3">
+            <!-- Order Type -->
+            <div class="glass-panel">
+                <h3>Order Type Mix (Share %)</h3>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="chart-order-type"></canvas>
+                </div>
+            </div>
+            
+            <!-- Payment Method -->
+            <div class="glass-panel">
+                <h3>Payment Method Mix (Share %)</h3>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="chart-payment-method"></canvas>
+                </div>
+            </div>
+            
+            <!-- Day of Week -->
+            <div class="glass-panel">
+                <h3>Weekly Order Pattern</h3>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="chart-weekly-pattern"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-panel">
+            <h3>Operational Efficiency Guidelines</h3>
+            <ul style="margin-left: 18px; font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; line-height: 1.4; margin-top: 10px;">
+                <li><strong>Seat Optimization</strong>: Low profit-per-seat branches (such as Suburb) should consider restructuring seat layout or promoting dine-in combo offers during off-peak hours.</li>
+                <li><strong>Channel Shifts</strong>: High delivery volume represents low physical space usage but adds packaging cost. Dine-in orders have higher customer ratings and should be encouraged via loyalty promotions.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- VIEW 4: CUSTOMER DIMENSIONS -->
+    <div id="view-customer" class="dashboard-view">
+        <div class="grid-2">
+            <!-- Customer Segment share -->
+            <div class="glass-panel">
+                <h3>Customer Segment Profit Contribution</h3>
+                <div class="chart-container">
+                    <canvas id="chart-customer-segments"></canvas>
+                </div>
+            </div>
+            
+            <!-- Age Group spending -->
+            <div class="glass-panel">
+                <h3>Age Group Spending Profile (Net Revenue)</h3>
+                <div class="chart-container">
+                    <canvas id="chart-age-spending"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <!-- Loyalty Spending correlation -->
+            <div class="glass-panel">
+                <h3>Loyalty Points vs. Customer Spending</h3>
+                <p style="color: var(--text-secondary); font-size: 11px; margin-top: 4px;">Scatter plot showing correlation between customer loyalty points and lifetime spending (Rs.).</p>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="chart-loyalty-scatter"></canvas>
+                </div>
+            </div>
+            
+            <!-- Customer segment stats -->
+            <div class="glass-panel">
+                <h3>Customer Segment Value Metrics</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer Type</th>
+                                <th>Revenue Contribution</th>
+                                <th>Profit Contribution</th>
+                                <th>Unique Customer Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customer-table-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dashboardData = {
+    "kpis": {
+        "total_revenue": 54551551.95,
+        "total_profit": 38091265.2,
+        "overall_margin": 69.82618062802887,
+        "total_orders": 15000,
+        "aov": 3636.7701300000003,
+        "avg_rating": 4.092137568755828,
+        "active_branches": 5,
+        "menu_items": 30
+    },
+    "monthly_stats": [
+        {
+            "month_label": "2022-01",
+            "revenue": 1611396.58,
+            "profit": 1124986.13
+        },
+        {
+            "month_label": "2022-02",
+            "revenue": 1426762.55,
+            "profit": 990307.43
+        },
+        {
+            "month_label": "2022-03",
+            "revenue": 1554298.36,
+            "profit": 1086695.27
+        },
+        {
+            "month_label": "2022-04",
+            "revenue": 1501912.37,
+            "profit": 1051362.04
+        },
+        {
+            "month_label": "2022-05",
+            "revenue": 1524148.04,
+            "profit": 1066860.14
+        },
+        {
+            "month_label": "2022-06",
+            "revenue": 1669083.17,
+            "profit": 1170559.8
+        },
+        {
+            "month_label": "2022-07",
+            "revenue": 1577363.31,
+            "profit": 1106116.1
+        },
+        {
+            "month_label": "2022-08",
+            "revenue": 1638784.54,
+            "profit": 1142164.62
+        },
+        {
+            "month_label": "2022-09",
+            "revenue": 1443894.18,
+            "profit": 1011272.26
+        },
+        {
+            "month_label": "2022-10",
+            "revenue": 1471172.28,
+            "profit": 1029527.83
+        },
+        {
+            "month_label": "2022-11",
+            "revenue": 1594275.01,
+            "profit": 1113905.26
+        },
+        {
+            "month_label": "2022-12",
+            "revenue": 1617769.03,
+            "profit": 1127278.16
+        },
+        {
+            "month_label": "2023-01",
+            "revenue": 1488882.43,
+            "profit": 1033366.39
+        },
+        {
+            "month_label": "2023-02",
+            "revenue": 1465726.03,
+            "profit": 1022044.24
+        },
+        {
+            "month_label": "2023-03",
+            "revenue": 1572402.23,
+            "profit": 1095969.57
+        },
+        {
+            "month_label": "2023-04",
+            "revenue": 1540090.28,
+            "profit": 1077518.74
+        },
+        {
+            "month_label": "2023-05",
+            "revenue": 1468256.83,
+            "profit": 1026580.01
+        },
+        {
+            "month_label": "2023-06",
+            "revenue": 1427273.24,
+            "profit": 993598.79
+        },
+        {
+            "month_label": "2023-07",
+            "revenue": 1609322.08,
+            "profit": 1114283.9
+        },
+        {
+            "month_label": "2023-08",
+            "revenue": 1614677.18,
+            "profit": 1124104.75
+        },
+        {
+            "month_label": "2023-09",
+            "revenue": 1514692.66,
+            "profit": 1063482.92
+        },
+        {
+            "month_label": "2023-10",
+            "revenue": 1361148.35,
+            "profit": 945016.82
+        },
+        {
+            "month_label": "2023-11",
+            "revenue": 1390029.32,
+            "profit": 969547.14
+        },
+        {
+            "month_label": "2023-12",
+            "revenue": 1540319.95,
+            "profit": 1075035.55
+        },
+        {
+            "month_label": "2024-01",
+            "revenue": 1579816.87,
+            "profit": 1104126.95
+        },
+        {
+            "month_label": "2024-02",
+            "revenue": 1421780.23,
+            "profit": 990979.41
+        },
+        {
+            "month_label": "2024-03",
+            "revenue": 1486342.33,
+            "profit": 1046118.94
+        },
+        {
+            "month_label": "2024-04",
+            "revenue": 1574127.63,
+            "profit": 1097420.85
+        },
+        {
+            "month_label": "2024-05",
+            "revenue": 1539906.34,
+            "profit": 1077413.36
+        },
+        {
+            "month_label": "2024-06",
+            "revenue": 1558491.87,
+            "profit": 1087653.29
+        },
+        {
+            "month_label": "2024-07",
+            "revenue": 1515694.33,
+            "profit": 1059887.44
+        },
+        {
+            "month_label": "2024-08",
+            "revenue": 1646979.28,
+            "profit": 1154015.53
+        },
+        {
+            "month_label": "2024-09",
+            "revenue": 1394071.76,
+            "profit": 971610.03
+        },
+        {
+            "month_label": "2024-10",
+            "revenue": 1460825.42,
+            "profit": 1021239.22
+        },
+        {
+            "month_label": "2024-11",
+            "revenue": 1308710.94,
+            "profit": 913959.56
+        },
+        {
+            "month_label": "2024-12",
+            "revenue": 1441124.95,
+            "profit": 1005256.76
+        }
+    ],
+    "category_stats": [
+        {
+            "category_name": "Beverages",
+            "revenue": 2922810.32,
+            "profit": 2299867.52,
+            "quantity": 28383,
+            "margin_pct": 78.69
+        },
+        {
+            "category_name": "Combos",
+            "revenue": 14950446.16,
+            "profit": 10031927.93,
+            "quantity": 17951,
+            "margin_pct": 67.1
+        },
+        {
+            "category_name": "Desserts",
+            "revenue": 3816170.24,
+            "profit": 2851609.56,
+            "quantity": 15866,
+            "margin_pct": 74.72
+        },
+        {
+            "category_name": "Main Course",
+            "revenue": 19499070.56,
+            "profit": 13848659.65,
+            "quantity": 45554,
+            "margin_pct": 71.02
+        },
+        {
+            "category_name": "Specials",
+            "revenue": 8921724.2,
+            "profit": 6024147.35,
+            "quantity": 12805,
+            "margin_pct": 67.52
+        },
+        {
+            "category_name": "Starters",
+            "revenue": 4441330.47,
+            "profit": 3035053.19,
+            "quantity": 16592,
+            "margin_pct": 68.34
+        }
+    ],
+    "branch_stats": [
+        {
+            "branch_name": "Beach",
+            "revenue": 11787398.62,
+            "profit": 8499134.71,
+            "orders": 3019,
+            "seating_cap": 60,
+            "revenue_per_seat": 196456.64,
+            "profit_per_seat": 141652.25
+        },
+        {
+            "branch_name": "Airport",
+            "revenue": 11372300.62,
+            "profit": 8042737.22,
+            "orders": 2990,
+            "seating_cap": 80,
+            "revenue_per_seat": 142153.76,
+            "profit_per_seat": 100534.22
+        },
+        {
+            "branch_name": "Mall",
+            "revenue": 10965792.27,
+            "profit": 7692750.26,
+            "orders": 2992,
+            "seating_cap": 200,
+            "revenue_per_seat": 54828.96,
+            "profit_per_seat": 38463.75
+        },
+        {
+            "branch_name": "Downtown",
+            "revenue": 10886187.92,
+            "profit": 7545858.04,
+            "orders": 3008,
+            "seating_cap": 120,
+            "revenue_per_seat": 90718.23,
+            "profit_per_seat": 62882.15
+        },
+        {
+            "branch_name": "Suburb",
+            "revenue": 9539872.52,
+            "profit": 6310784.97,
+            "orders": 2991,
+            "seating_cap": 90,
+            "revenue_per_seat": 105998.58,
+            "profit_per_seat": 70119.83
+        }
+    ],
+    "menu_bcg": [
+        {
+            "item_name": "Paneer Tikka",
+            "category_name": "Starters",
+            "total_quantity_sold": 2764,
+            "unit_contribution_margin": 201.28715267727932,
+            "menu_category": "Dog",
+            "base_price": 280
+        },
+        {
+            "item_name": "Chicken Wings",
+            "category_name": "Starters",
+            "total_quantity_sold": 3934,
+            "unit_contribution_margin": 221.15574478901883,
+            "menu_category": "Dog",
+            "base_price": 320
+        },
+        {
+            "item_name": "Veg Spring Rolls",
+            "category_name": "Starters",
+            "total_quantity_sold": 4934,
+            "unit_contribution_margin": 163.04477503040127,
+            "menu_category": "Plowhorse",
+            "base_price": 220
+        },
+        {
+            "item_name": "Fish Tacos",
+            "category_name": "Starters",
+            "total_quantity_sold": 2110,
+            "unit_contribution_margin": 232.1374502369668,
+            "menu_category": "Dog",
+            "base_price": 350
+        },
+        {
+            "item_name": "Soup of the Day",
+            "category_name": "Starters",
+            "total_quantity_sold": 2850,
+            "unit_contribution_margin": 110.3143298245614,
+            "menu_category": "Dog",
+            "base_price": 150
+        },
+        {
+            "item_name": "Butter Chicken",
+            "category_name": "Main Course",
+            "total_quantity_sold": 7479,
+            "unit_contribution_margin": 297.20553549939825,
+            "menu_category": "Plowhorse",
+            "base_price": 420
+        },
+        {
+            "item_name": "Dal Makhani",
+            "category_name": "Main Course",
+            "total_quantity_sold": 5751,
+            "unit_contribution_margin": 252.7986106764041,
+            "menu_category": "Plowhorse",
+            "base_price": 320
+        },
+        {
+            "item_name": "Grilled Salmon",
+            "category_name": "Main Course",
+            "total_quantity_sold": 2901,
+            "unit_contribution_margin": 451.33824887969666,
+            "menu_category": "Puzzle",
+            "base_price": 650
+        },
+        {
+            "item_name": "Pasta Arrabiata",
+            "category_name": "Main Course",
+            "total_quantity_sold": 3913,
+            "unit_contribution_margin": 299.34634551495014,
+            "menu_category": "Dog",
+            "base_price": 380
+        },
+        {
+            "item_name": "Lamb Biryani",
+            "category_name": "Main Course",
+            "total_quantity_sold": 4724,
+            "unit_contribution_margin": 359.75674428450475,
+            "menu_category": "Star",
+            "base_price": 520
+        },
+        {
+            "item_name": "Veg Biryani",
+            "category_name": "Main Course",
+            "total_quantity_sold": 6314,
+            "unit_contribution_margin": 293.85534368070955,
+            "menu_category": "Plowhorse",
+            "base_price": 380
+        },
+        {
+            "item_name": "Pizza Margherita",
+            "category_name": "Main Course",
+            "total_quantity_sold": 7982,
+            "unit_contribution_margin": 267.6902042094713,
+            "menu_category": "Plowhorse",
+            "base_price": 340
+        },
+        {
+            "item_name": "Chicken Tikka Masala",
+            "category_name": "Main Course",
+            "total_quantity_sold": 6490,
+            "unit_contribution_margin": 308.1268659476117,
+            "menu_category": "Star",
+            "base_price": 440
+        },
+        {
+            "item_name": "Chocolate Lava Cake",
+            "category_name": "Desserts",
+            "total_quantity_sold": 3827,
+            "unit_contribution_margin": 220.206817350405,
+            "menu_category": "Dog",
+            "base_price": 280
+        },
+        {
+            "item_name": "Tiramisu",
+            "category_name": "Desserts",
+            "total_quantity_sold": 3103,
+            "unit_contribution_margin": 223.34092813406377,
+            "menu_category": "Dog",
+            "base_price": 300
+        },
+        {
+            "item_name": "Gulab Jamun",
+            "category_name": "Desserts",
+            "total_quantity_sold": 4926,
+            "unit_contribution_margin": 125.9622472594397,
+            "menu_category": "Plowhorse",
+            "base_price": 160
+        },
+        {
+            "item_name": "Ice Cream Sundae",
+            "category_name": "Desserts",
+            "total_quantity_sold": 4010,
+            "unit_contribution_margin": 173.40676309226933,
+            "menu_category": "Dog",
+            "base_price": 220
+        },
+        {
+            "item_name": "Fresh Lime Soda",
+            "category_name": "Beverages",
+            "total_quantity_sold": 5350,
+            "unit_contribution_margin": 68.07049906542056,
+            "menu_category": "Plowhorse",
+            "base_price": 80
+        },
+        {
+            "item_name": "Mango Lassi",
+            "category_name": "Beverages",
+            "total_quantity_sold": 6714,
+            "unit_contribution_margin": 94.24178284182307,
+            "menu_category": "Plowhorse",
+            "base_price": 120
+        },
+        {
+            "item_name": "Cold Coffee",
+            "category_name": "Beverages",
+            "total_quantity_sold": 4968,
+            "unit_contribution_margin": 120.57927938808373,
+            "menu_category": "Plowhorse",
+            "base_price": 150
+        },
+        {
+            "item_name": "Masala Chai",
+            "category_name": "Beverages",
+            "total_quantity_sold": 7437,
+            "unit_contribution_margin": 50.46567433104747,
+            "menu_category": "Plowhorse",
+            "base_price": 60
+        },
+        {
+            "item_name": "Orange Juice",
+            "category_name": "Beverages",
+            "total_quantity_sold": 3914,
+            "unit_contribution_margin": 83.95500510986204,
+            "menu_category": "Dog",
+            "base_price": 100
+        },
+        {
+            "item_name": "Family Feast",
+            "category_name": "Combos",
+            "total_quantity_sold": 4680,
+            "unit_contribution_margin": 821.9584807692306,
+            "menu_category": "Star",
+            "base_price": 1200
+        },
+        {
+            "item_name": "Veg Combo Meal",
+            "category_name": "Combos",
+            "total_quantity_sold": 7404,
+            "unit_contribution_margin": 337.30482712047547,
+            "menu_category": "Star",
+            "base_price": 480
+        },
+        {
+            "item_name": "Couple Dinner",
+            "category_name": "Combos",
+            "total_quantity_sold": 5867,
+            "unit_contribution_margin": 628.559277313789,
+            "menu_category": "Star",
+            "base_price": 900
+        },
+        {
+            "item_name": "Chef's Special Curry",
+            "category_name": "Specials",
+            "total_quantity_sold": 3120,
+            "unit_contribution_margin": 402.1707916666666,
+            "menu_category": "Puzzle",
+            "base_price": 580
+        },
+        {
+            "item_name": "Truffle Mushroom Risotto",
+            "category_name": "Specials",
+            "total_quantity_sold": 3884,
+            "unit_contribution_margin": 457.19633110195673,
+            "menu_category": "Puzzle",
+            "base_price": 620
+        },
+        {
+            "item_name": "Seared Duck Breast",
+            "category_name": "Specials",
+            "total_quantity_sold": 1900,
+            "unit_contribution_margin": 507.8585,
+            "menu_category": "Puzzle",
+            "base_price": 750
+        },
+        {
+            "item_name": "Quinoa Salad",
+            "category_name": "Specials",
+            "total_quantity_sold": 2894,
+            "unit_contribution_margin": 294.70099170697995,
+            "menu_category": "Dog",
+            "base_price": 390
+        },
+        {
+            "item_name": "Lobster Thermidor",
+            "category_name": "Specials",
+            "total_quantity_sold": 1007,
+            "unit_contribution_margin": 1167.6545283018866,
+            "menu_category": "Puzzle",
+            "base_price": 1800
+        }
+    ],
+    "bcg_benchmarks": {
+        "avg_qty": 4571.7,
+        "avg_margin": 307.8563358601458
+    },
+    "day_perf": [
+        {
+            "order_dayofweek": 0,
+            "orders": 2105,
+            "revenue": 7693926.92,
+            "day_name": "Monday"
+        },
+        {
+            "order_dayofweek": 1,
+            "orders": 2184,
+            "revenue": 8164234.33,
+            "day_name": "Tuesday"
+        },
+        {
+            "order_dayofweek": 2,
+            "orders": 2150,
+            "revenue": 7646078.77,
+            "day_name": "Wednesday"
+        },
+        {
+            "order_dayofweek": 3,
+            "orders": 2146,
+            "revenue": 7961282.07,
+            "day_name": "Thursday"
+        },
+        {
+            "order_dayofweek": 4,
+            "orders": 2102,
+            "revenue": 7558208.98,
+            "day_name": "Friday"
+        },
+        {
+            "order_dayofweek": 5,
+            "orders": 2117,
+            "revenue": 7476651.65,
+            "day_name": "Saturday"
+        },
+        {
+            "order_dayofweek": 6,
+            "orders": 2196,
+            "revenue": 8051169.23,
+            "day_name": "Sunday"
+        }
+    ],
+    "order_type_perf": [
+        {
+            "order_type": "Delivery",
+            "net_sales": 18534999.58
+        },
+        {
+            "order_type": "Dine-In",
+            "net_sales": 18034158.43
+        },
+        {
+            "order_type": "Takeaway",
+            "net_sales": 17982393.94
+        }
+    ],
+    "payment_perf": [
+        {
+            "payment_method": "Card",
+            "net_sales": 10884774.46
+        },
+        {
+            "payment_method": "Cash",
+            "net_sales": 10623752.62
+        },
+        {
+            "payment_method": "Online",
+            "net_sales": 11185219.68
+        },
+        {
+            "payment_method": "UPI",
+            "net_sales": 11026581.48
+        },
+        {
+            "payment_method": "Wallet",
+            "net_sales": 10831223.71
+        }
+    ],
+    "customer_type_perf": [
+        {
+            "customer_type": "New",
+            "revenue": 12994413.67,
+            "profit": 9063414.75,
+            "customers": 716
+        },
+        {
+            "customer_type": "Occasional",
+            "revenue": 17327116.74,
+            "profit": 12109132.73,
+            "customers": 929
+        },
+        {
+            "customer_type": "Regular",
+            "revenue": 19586305.47,
+            "profit": 13677428.37,
+            "customers": 1067
+        },
+        {
+            "customer_type": "VIP",
+            "revenue": 4643716.07,
+            "profit": 3241289.35,
+            "customers": 275
+        }
+    ],
+    "age_group_perf": [
+        {
+            "age_group": "25-34",
+            "revenue": 10426072.68,
+            "orders": 2868
+        },
+        {
+            "age_group": "35-44",
+            "revenue": 11356556.14,
+            "orders": 3056
+        },
+        {
+            "age_group": "45-54",
+            "revenue": 10137696.05,
+            "orders": 2800
+        },
+        {
+            "age_group": "55+",
+            "revenue": 15309630.19,
+            "orders": 4281
+        },
+        {
+            "age_group": "<25",
+            "revenue": 7321596.89,
+            "orders": 1995
+        }
+    ],
+    "loyalty_sample": [
+        {
+            "customer_id": 1,
+            "customer_name": "Customer_0001",
+            "total_spending": 8415.25,
+            "loyalty_points": 3148
+        },
+        {
+            "customer_id": 2,
+            "customer_name": "Customer_0002",
+            "total_spending": 18151.65,
+            "loyalty_points": 1351
+        },
+        {
+            "customer_id": 3,
+            "customer_name": "Customer_0003",
+            "total_spending": 14289.5,
+            "loyalty_points": 2821
+        },
+        {
+            "customer_id": 4,
+            "customer_name": "Customer_0004",
+            "total_spending": 6347.23,
+            "loyalty_points": 3827
+        },
+        {
+            "customer_id": 5,
+            "customer_name": "Customer_0005",
+            "total_spending": 19087.28,
+            "loyalty_points": 669
+        },
+        {
+            "customer_id": 6,
+            "customer_name": "Customer_0006",
+            "total_spending": 24447.55,
+            "loyalty_points": 4813
+        },
+        {
+            "customer_id": 7,
+            "customer_name": "Customer_0007",
+            "total_spending": 12800.47,
+            "loyalty_points": 2646
+        },
+        {
+            "customer_id": 8,
+            "customer_name": "Customer_0008",
+            "total_spending": 19047.11,
+            "loyalty_points": 266
+        },
+        {
+            "customer_id": 9,
+            "customer_name": "Customer_0009",
+            "total_spending": 28339.31,
+            "loyalty_points": 1438
+        },
+        {
+            "customer_id": 10,
+            "customer_name": "Customer_0010",
+            "total_spending": 12040.37,
+            "loyalty_points": 2693
+        },
+        {
+            "customer_id": 11,
+            "customer_name": "Customer_0011",
+            "total_spending": 16168.460000000001,
+            "loyalty_points": 1022
+        },
+        {
+            "customer_id": 12,
+            "customer_name": "Customer_0012",
+            "total_spending": 12766.8,
+            "loyalty_points": 2037
+        },
+        {
+            "customer_id": 13,
+            "customer_name": "Customer_0013",
+            "total_spending": 15347.85,
+            "loyalty_points": 564
+        },
+        {
+            "customer_id": 14,
+            "customer_name": "Customer_0014",
+            "total_spending": 31651.59,
+            "loyalty_points": 1059
+        },
+        {
+            "customer_id": 15,
+            "customer_name": "Customer_0015",
+            "total_spending": 20058.47,
+            "loyalty_points": 1424
+        },
+        {
+            "customer_id": 16,
+            "customer_name": "Customer_0016",
+            "total_spending": 22606.13,
+            "loyalty_points": 4123
+        },
+        {
+            "customer_id": 17,
+            "customer_name": "Customer_0017",
+            "total_spending": 33186.01,
+            "loyalty_points": 219
+        },
+        {
+            "customer_id": 18,
+            "customer_name": "Customer_0018",
+            "total_spending": 19672.0,
+            "loyalty_points": 405
+        },
+        {
+            "customer_id": 19,
+            "customer_name": "Customer_0019",
+            "total_spending": 20511.09,
+            "loyalty_points": 1637
+        },
+        {
+            "customer_id": 20,
+            "customer_name": "Customer_0020",
+            "total_spending": 23848.14,
+            "loyalty_points": 2318
+        },
+        {
+            "customer_id": 21,
+            "customer_name": "Customer_0021",
+            "total_spending": 7182.91,
+            "loyalty_points": 1759
+        },
+        {
+            "customer_id": 22,
+            "customer_name": "Customer_0022",
+            "total_spending": 26609.73,
+            "loyalty_points": 1674
+        },
+        {
+            "customer_id": 23,
+            "customer_name": "Customer_0023",
+            "total_spending": 9843.15,
+            "loyalty_points": 791
+        },
+        {
+            "customer_id": 24,
+            "customer_name": "Customer_0024",
+            "total_spending": 12813.75,
+            "loyalty_points": 3582
+        },
+        {
+            "customer_id": 25,
+            "customer_name": "Customer_0025",
+            "total_spending": 12610.34,
+            "loyalty_points": 1309
+        },
+        {
+            "customer_id": 26,
+            "customer_name": "Customer_0026",
+            "total_spending": 18904.28,
+            "loyalty_points": 3833
+        },
+        {
+            "customer_id": 27,
+            "customer_name": "Customer_0027",
+            "total_spending": 8905.84,
+            "loyalty_points": 4929
+        },
+        {
+            "customer_id": 28,
+            "customer_name": "Customer_0028",
+            "total_spending": 17811.35,
+            "loyalty_points": 4412
+        },
+        {
+            "customer_id": 29,
+            "customer_name": "Customer_0029",
+            "total_spending": 25749.24,
+            "loyalty_points": 1330
+        },
+        {
+            "customer_id": 30,
+            "customer_name": "Customer_0030",
+            "total_spending": 28891.72,
+            "loyalty_points": 4446
+        },
+        {
+            "customer_id": 31,
+            "customer_name": "Customer_0031",
+            "total_spending": 2598.86,
+            "loyalty_points": 510
+        },
+        {
+            "customer_id": 32,
+            "customer_name": "Customer_0032",
+            "total_spending": 15018.99,
+            "loyalty_points": 2572
+        },
+        {
+            "customer_id": 33,
+            "customer_name": "Customer_0033",
+            "total_spending": 15799.130000000001,
+            "loyalty_points": 3929
+        },
+        {
+            "customer_id": 34,
+            "customer_name": "Customer_0034",
+            "total_spending": 20551.39,
+            "loyalty_points": 491
+        },
+        {
+            "customer_id": 35,
+            "customer_name": "Customer_0035",
+            "total_spending": 29100.69,
+            "loyalty_points": 1617
+        },
+        {
+            "customer_id": 36,
+            "customer_name": "Customer_0036",
+            "total_spending": 72879.05,
+            "loyalty_points": 2056
+        },
+        {
+            "customer_id": 37,
+            "customer_name": "Customer_0037",
+            "total_spending": 22314.13,
+            "loyalty_points": 1520
+        },
+        {
+            "customer_id": 38,
+            "customer_name": "Customer_0038",
+            "total_spending": 9363.789999999999,
+            "loyalty_points": 1583
+        },
+        {
+            "customer_id": 39,
+            "customer_name": "Customer_0039",
+            "total_spending": 15310.95,
+            "loyalty_points": 1575
+        },
+        {
+            "customer_id": 40,
+            "customer_name": "Customer_0040",
+            "total_spending": 23125.02,
+            "loyalty_points": 3946
+        },
+        {
+            "customer_id": 41,
+            "customer_name": "Customer_0041",
+            "total_spending": 14711.22,
+            "loyalty_points": 1761
+        },
+        {
+            "customer_id": 43,
+            "customer_name": "Customer_0043",
+            "total_spending": 19678.05,
+            "loyalty_points": 3179
+        },
+        {
+            "customer_id": 44,
+            "customer_name": "Customer_0044",
+            "total_spending": 7803.490000000001,
+            "loyalty_points": 3326
+        },
+        {
+            "customer_id": 45,
+            "customer_name": "Customer_0045",
+            "total_spending": 20325.61,
+            "loyalty_points": 1046
+        },
+        {
+            "customer_id": 46,
+            "customer_name": "Customer_0046",
+            "total_spending": 27478.3,
+            "loyalty_points": 2892
+        },
+        {
+            "customer_id": 47,
+            "customer_name": "Customer_0047",
+            "total_spending": 3352.8900000000003,
+            "loyalty_points": 2613
+        },
+        {
+            "customer_id": 48,
+            "customer_name": "Customer_0048",
+            "total_spending": 20302.62,
+            "loyalty_points": 3892
+        },
+        {
+            "customer_id": 49,
+            "customer_name": "Customer_0049",
+            "total_spending": 28561.07,
+            "loyalty_points": 4144
+        },
+        {
+            "customer_id": 50,
+            "customer_name": "Customer_0050",
+            "total_spending": 15879.029999999999,
+            "loyalty_points": 461
+        },
+        {
+            "customer_id": 51,
+            "customer_name": "Customer_0051",
+            "total_spending": 15308.02,
+            "loyalty_points": 4431
+        },
+        {
+            "customer_id": 52,
+            "customer_name": "Customer_0052",
+            "total_spending": 18450.86,
+            "loyalty_points": 1381
+        },
+        {
+            "customer_id": 53,
+            "customer_name": "Customer_0053",
+            "total_spending": 14843.630000000001,
+            "loyalty_points": 1145
+        },
+        {
+            "customer_id": 54,
+            "customer_name": "Customer_0054",
+            "total_spending": 26057.79,
+            "loyalty_points": 3515
+        },
+        {
+            "customer_id": 55,
+            "customer_name": "Customer_0055",
+            "total_spending": 25276.29,
+            "loyalty_points": 4454
+        },
+        {
+            "customer_id": 56,
+            "customer_name": "Customer_0056",
+            "total_spending": 17683.33,
+            "loyalty_points": 192
+        },
+        {
+            "customer_id": 57,
+            "customer_name": "Customer_0057",
+            "total_spending": 10084.36,
+            "loyalty_points": 3534
+        },
+        {
+            "customer_id": 58,
+            "customer_name": "Customer_0058",
+            "total_spending": 19553.82,
+            "loyalty_points": 755
+        },
+        {
+            "customer_id": 59,
+            "customer_name": "Customer_0059",
+            "total_spending": 18815.52,
+            "loyalty_points": 1684
+        },
+        {
+            "customer_id": 60,
+            "customer_name": "Customer_0060",
+            "total_spending": 10501.25,
+            "loyalty_points": 2525
+        },
+        {
+            "customer_id": 61,
+            "customer_name": "Customer_0061",
+            "total_spending": 29646.97,
+            "loyalty_points": 827
+        },
+        {
+            "customer_id": 62,
+            "customer_name": "Customer_0062",
+            "total_spending": 19016.48,
+            "loyalty_points": 889
+        },
+        {
+            "customer_id": 63,
+            "customer_name": "Customer_0063",
+            "total_spending": 28871.54,
+            "loyalty_points": 4748
+        },
+        {
+            "customer_id": 64,
+            "customer_name": "Customer_0064",
+            "total_spending": 22344.77,
+            "loyalty_points": 2455
+        },
+        {
+            "customer_id": 65,
+            "customer_name": "Customer_0065",
+            "total_spending": 16005.89,
+            "loyalty_points": 2333
+        },
+        {
+            "customer_id": 66,
+            "customer_name": "Customer_0066",
+            "total_spending": 16121.15,
+            "loyalty_points": 4946
+        },
+        {
+            "customer_id": 67,
+            "customer_name": "Customer_0067",
+            "total_spending": 11221.74,
+            "loyalty_points": 110
+        },
+        {
+            "customer_id": 68,
+            "customer_name": "Customer_0068",
+            "total_spending": 19342.960000000003,
+            "loyalty_points": 4715
+        },
+        {
+            "customer_id": 69,
+            "customer_name": "Customer_0069",
+            "total_spending": 23616.11,
+            "loyalty_points": 792
+        },
+        {
+            "customer_id": 70,
+            "customer_name": "Customer_0070",
+            "total_spending": 13570.34,
+            "loyalty_points": 4683
+        },
+        {
+            "customer_id": 71,
+            "customer_name": "Customer_0071",
+            "total_spending": 5644.74,
+            "loyalty_points": 2643
+        },
+        {
+            "customer_id": 72,
+            "customer_name": "Customer_0072",
+            "total_spending": 14587.19,
+            "loyalty_points": 3414
+        },
+        {
+            "customer_id": 73,
+            "customer_name": "Customer_0073",
+            "total_spending": 19169.29,
+            "loyalty_points": 1309
+        },
+        {
+            "customer_id": 74,
+            "customer_name": "Customer_0074",
+            "total_spending": 28340.11,
+            "loyalty_points": 296
+        },
+        {
+            "customer_id": 75,
+            "customer_name": "Customer_0075",
+            "total_spending": 10627.880000000001,
+            "loyalty_points": 1629
+        },
+        {
+            "customer_id": 76,
+            "customer_name": "Customer_0076",
+            "total_spending": 1246.49,
+            "loyalty_points": 568
+        },
+        {
+            "customer_id": 77,
+            "customer_name": "Customer_0077",
+            "total_spending": 51058.49,
+            "loyalty_points": 4927
+        },
+        {
+            "customer_id": 78,
+            "customer_name": "Customer_0078",
+            "total_spending": 8621.56,
+            "loyalty_points": 4705
+        },
+        {
+            "customer_id": 79,
+            "customer_name": "Customer_0079",
+            "total_spending": 32015.42,
+            "loyalty_points": 4111
+        },
+        {
+            "customer_id": 80,
+            "customer_name": "Customer_0080",
+            "total_spending": 20552.59,
+            "loyalty_points": 71
+        },
+        {
+            "customer_id": 81,
+            "customer_name": "Customer_0081",
+            "total_spending": 16140.17,
+            "loyalty_points": 4365
+        },
+        {
+            "customer_id": 82,
+            "customer_name": "Customer_0082",
+            "total_spending": 25480.84,
+            "loyalty_points": 4382
+        },
+        {
+            "customer_id": 83,
+            "customer_name": "Customer_0083",
+            "total_spending": 16467.829999999998,
+            "loyalty_points": 65
+        },
+        {
+            "customer_id": 84,
+            "customer_name": "Customer_0084",
+            "total_spending": 15730.550000000001,
+            "loyalty_points": 879
+        },
+        {
+            "customer_id": 85,
+            "customer_name": "Customer_0085",
+            "total_spending": 25485.32,
+            "loyalty_points": 67
+        },
+        {
+            "customer_id": 86,
+            "customer_name": "Customer_0086",
+            "total_spending": 18338.77,
+            "loyalty_points": 1216
+        },
+        {
+            "customer_id": 87,
+            "customer_name": "Customer_0087",
+            "total_spending": 3540.15,
+            "loyalty_points": 3027
+        },
+        {
+            "customer_id": 88,
+            "customer_name": "Customer_0088",
+            "total_spending": 10578.66,
+            "loyalty_points": 3239
+        },
+        {
+            "customer_id": 89,
+            "customer_name": "Customer_0089",
+            "total_spending": 2824.2200000000003,
+            "loyalty_points": 3480
+        },
+        {
+            "customer_id": 90,
+            "customer_name": "Customer_0090",
+            "total_spending": 15116.539999999999,
+            "loyalty_points": 507
+        },
+        {
+            "customer_id": 91,
+            "customer_name": "Customer_0091",
+            "total_spending": 25617.31,
+            "loyalty_points": 3714
+        },
+        {
+            "customer_id": 92,
+            "customer_name": "Customer_0092",
+            "total_spending": 15619.460000000001,
+            "loyalty_points": 2884
+        },
+        {
+            "customer_id": 93,
+            "customer_name": "Customer_0093",
+            "total_spending": 10268.51,
+            "loyalty_points": 1125
+        },
+        {
+            "customer_id": 94,
+            "customer_name": "Customer_0094",
+            "total_spending": 12280.58,
+            "loyalty_points": 885
+        },
+        {
+            "customer_id": 95,
+            "customer_name": "Customer_0095",
+            "total_spending": 33998.880000000005,
+            "loyalty_points": 2841
+        },
+        {
+            "customer_id": 96,
+            "customer_name": "Customer_0096",
+            "total_spending": 3958.58,
+            "loyalty_points": 3877
+        },
+        {
+            "customer_id": 97,
+            "customer_name": "Customer_0097",
+            "total_spending": 26503.84,
+            "loyalty_points": 4870
+        },
+        {
+            "customer_id": 98,
+            "customer_name": "Customer_0098",
+            "total_spending": 25885.55,
+            "loyalty_points": 2525
+        },
+        {
+            "customer_id": 99,
+            "customer_name": "Customer_0099",
+            "total_spending": 5740.32,
+            "loyalty_points": 925
+        },
+        {
+            "customer_id": 100,
+            "customer_name": "Customer_0100",
+            "total_spending": 6369.04,
+            "loyalty_points": 4215
+        },
+        {
+            "customer_id": 101,
+            "customer_name": "Customer_0101",
+            "total_spending": 3702.4399999999996,
+            "loyalty_points": 1938
+        },
+        {
+            "customer_id": 102,
+            "customer_name": "Customer_0102",
+            "total_spending": 3186.8599999999997,
+            "loyalty_points": 3814
+        },
+        {
+            "customer_id": 103,
+            "customer_name": "Customer_0103",
+            "total_spending": 7647.9,
+            "loyalty_points": 3362
+        },
+        {
+            "customer_id": 104,
+            "customer_name": "Customer_0104",
+            "total_spending": 10166.02,
+            "loyalty_points": 4583
+        },
+        {
+            "customer_id": 105,
+            "customer_name": "Customer_0105",
+            "total_spending": 11748.02,
+            "loyalty_points": 3232
+        },
+        {
+            "customer_id": 106,
+            "customer_name": "Customer_0106",
+            "total_spending": 13982.46,
+            "loyalty_points": 3744
+        },
+        {
+            "customer_id": 107,
+            "customer_name": "Customer_0107",
+            "total_spending": 20666.48,
+            "loyalty_points": 3465
+        },
+        {
+            "customer_id": 108,
+            "customer_name": "Customer_0108",
+            "total_spending": 28711.13,
+            "loyalty_points": 440
+        },
+        {
+            "customer_id": 109,
+            "customer_name": "Customer_0109",
+            "total_spending": 9719.5,
+            "loyalty_points": 3611
+        },
+        {
+            "customer_id": 110,
+            "customer_name": "Customer_0110",
+            "total_spending": 32053.28,
+            "loyalty_points": 461
+        },
+        {
+            "customer_id": 111,
+            "customer_name": "Customer_0111",
+            "total_spending": 3918.23,
+            "loyalty_points": 611
+        },
+        {
+            "customer_id": 112,
+            "customer_name": "Customer_0112",
+            "total_spending": 13535.49,
+            "loyalty_points": 3471
+        },
+        {
+            "customer_id": 113,
+            "customer_name": "Customer_0113",
+            "total_spending": 12688.24,
+            "loyalty_points": 3163
+        },
+        {
+            "customer_id": 114,
+            "customer_name": "Customer_0114",
+            "total_spending": 20558.65,
+            "loyalty_points": 5
+        },
+        {
+            "customer_id": 115,
+            "customer_name": "Customer_0115",
+            "total_spending": 24405.95,
+            "loyalty_points": 4776
+        },
+        {
+            "customer_id": 116,
+            "customer_name": "Customer_0116",
+            "total_spending": 11615.26,
+            "loyalty_points": 3970
+        },
+        {
+            "customer_id": 117,
+            "customer_name": "Customer_0117",
+            "total_spending": 11957.31,
+            "loyalty_points": 2858
+        },
+        {
+            "customer_id": 118,
+            "customer_name": "Customer_0118",
+            "total_spending": 16627.67,
+            "loyalty_points": 2606
+        },
+        {
+            "customer_id": 119,
+            "customer_name": "Customer_0119",
+            "total_spending": 7045.91,
+            "loyalty_points": 98
+        },
+        {
+            "customer_id": 120,
+            "customer_name": "Customer_0120",
+            "total_spending": 2999.2,
+            "loyalty_points": 525
+        },
+        {
+            "customer_id": 121,
+            "customer_name": "Customer_0121",
+            "total_spending": 36205.6,
+            "loyalty_points": 1180
+        },
+        {
+            "customer_id": 122,
+            "customer_name": "Customer_0122",
+            "total_spending": 30302.059999999998,
+            "loyalty_points": 1689
+        },
+        {
+            "customer_id": 123,
+            "customer_name": "Customer_0123",
+            "total_spending": 36428.54,
+            "loyalty_points": 1138
+        },
+        {
+            "customer_id": 124,
+            "customer_name": "Customer_0124",
+            "total_spending": 9077.46,
+            "loyalty_points": 4491
+        },
+        {
+            "customer_id": 125,
+            "customer_name": "Customer_0125",
+            "total_spending": 17124.28,
+            "loyalty_points": 4865
+        },
+        {
+            "customer_id": 126,
+            "customer_name": "Customer_0126",
+            "total_spending": 12164.26,
+            "loyalty_points": 3071
+        },
+        {
+            "customer_id": 127,
+            "customer_name": "Customer_0127",
+            "total_spending": 17881.84,
+            "loyalty_points": 2927
+        },
+        {
+            "customer_id": 128,
+            "customer_name": "Customer_0128",
+            "total_spending": 25047.84,
+            "loyalty_points": 2792
+        },
+        {
+            "customer_id": 129,
+            "customer_name": "Customer_0129",
+            "total_spending": 34685.08,
+            "loyalty_points": 4778
+        },
+        {
+            "customer_id": 130,
+            "customer_name": "Customer_0130",
+            "total_spending": 5955.46,
+            "loyalty_points": 14
+        },
+        {
+            "customer_id": 131,
+            "customer_name": "Customer_0131",
+            "total_spending": 31268.41,
+            "loyalty_points": 2415
+        },
+        {
+            "customer_id": 132,
+            "customer_name": "Customer_0132",
+            "total_spending": 24633.24,
+            "loyalty_points": 2685
+        },
+        {
+            "customer_id": 133,
+            "customer_name": "Customer_0133",
+            "total_spending": 14197.66,
+            "loyalty_points": 2900
+        },
+        {
+            "customer_id": 134,
+            "customer_name": "Customer_0134",
+            "total_spending": 22071.12,
+            "loyalty_points": 1236
+        },
+        {
+            "customer_id": 135,
+            "customer_name": "Customer_0135",
+            "total_spending": 9136.94,
+            "loyalty_points": 4100
+        },
+        {
+            "customer_id": 136,
+            "customer_name": "Customer_0136",
+            "total_spending": 41088.31,
+            "loyalty_points": 3220
+        },
+        {
+            "customer_id": 137,
+            "customer_name": "Customer_0137",
+            "total_spending": 16957.02,
+            "loyalty_points": 1607
+        },
+        {
+            "customer_id": 138,
+            "customer_name": "Customer_0138",
+            "total_spending": 28303.62,
+            "loyalty_points": 3563
+        },
+        {
+            "customer_id": 139,
+            "customer_name": "Customer_0139",
+            "total_spending": 36326.79,
+            "loyalty_points": 3297
+        },
+        {
+            "customer_id": 140,
+            "customer_name": "Customer_0140",
+            "total_spending": 15879.14,
+            "loyalty_points": 2633
+        },
+        {
+            "customer_id": 141,
+            "customer_name": "Customer_0141",
+            "total_spending": 13912.21,
+            "loyalty_points": 3890
+        },
+        {
+            "customer_id": 142,
+            "customer_name": "Customer_0142",
+            "total_spending": 5033.78,
+            "loyalty_points": 4264
+        },
+        {
+            "customer_id": 143,
+            "customer_name": "Customer_0143",
+            "total_spending": 15995.93,
+            "loyalty_points": 2808
+        },
+        {
+            "customer_id": 144,
+            "customer_name": "Customer_0144",
+            "total_spending": 9858.71,
+            "loyalty_points": 791
+        },
+        {
+            "customer_id": 145,
+            "customer_name": "Customer_0145",
+            "total_spending": 50012.1,
+            "loyalty_points": 999
+        },
+        {
+            "customer_id": 146,
+            "customer_name": "Customer_0146",
+            "total_spending": 6484.93,
+            "loyalty_points": 151
+        },
+        {
+            "customer_id": 147,
+            "customer_name": "Customer_0147",
+            "total_spending": 30885.850000000002,
+            "loyalty_points": 3063
+        },
+        {
+            "customer_id": 148,
+            "customer_name": "Customer_0148",
+            "total_spending": 8066.17,
+            "loyalty_points": 4599
+        },
+        {
+            "customer_id": 149,
+            "customer_name": "Customer_0149",
+            "total_spending": 4329.18,
+            "loyalty_points": 2091
+        },
+        {
+            "customer_id": 150,
+            "customer_name": "Customer_0150",
+            "total_spending": 46129.94,
+            "loyalty_points": 4599
+        },
+        {
+            "customer_id": 151,
+            "customer_name": "Customer_0151",
+            "total_spending": 11338.57,
+            "loyalty_points": 4082
+        },
+        {
+            "customer_id": 152,
+            "customer_name": "Customer_0152",
+            "total_spending": 22525.87,
+            "loyalty_points": 4026
+        },
+        {
+            "customer_id": 153,
+            "customer_name": "Customer_0153",
+            "total_spending": 6258.03,
+            "loyalty_points": 2977
+        },
+        {
+            "customer_id": 154,
+            "customer_name": "Customer_0154",
+            "total_spending": 9781.76,
+            "loyalty_points": 842
+        },
+        {
+            "customer_id": 155,
+            "customer_name": "Customer_0155",
+            "total_spending": 35239.09,
+            "loyalty_points": 4446
+        },
+        {
+            "customer_id": 156,
+            "customer_name": "Customer_0156",
+            "total_spending": 8861.539999999999,
+            "loyalty_points": 3793
+        },
+        {
+            "customer_id": 157,
+            "customer_name": "Customer_0157",
+            "total_spending": 11547.17,
+            "loyalty_points": 2070
+        },
+        {
+            "customer_id": 158,
+            "customer_name": "Customer_0158",
+            "total_spending": 7894.93,
+            "loyalty_points": 1659
+        },
+        {
+            "customer_id": 159,
+            "customer_name": "Customer_0159",
+            "total_spending": 15784.22,
+            "loyalty_points": 597
+        },
+        {
+            "customer_id": 160,
+            "customer_name": "Customer_0160",
+            "total_spending": 17867.94,
+            "loyalty_points": 2513
+        },
+        {
+            "customer_id": 161,
+            "customer_name": "Customer_0161",
+            "total_spending": 11310.97,
+            "loyalty_points": 4135
+        },
+        {
+            "customer_id": 162,
+            "customer_name": "Customer_0162",
+            "total_spending": 38232.29,
+            "loyalty_points": 4270
+        },
+        {
+            "customer_id": 163,
+            "customer_name": "Customer_0163",
+            "total_spending": 2870.01,
+            "loyalty_points": 3603
+        },
+        {
+            "customer_id": 164,
+            "customer_name": "Customer_0164",
+            "total_spending": 4159.27,
+            "loyalty_points": 1216
+        },
+        {
+            "customer_id": 165,
+            "customer_name": "Customer_0165",
+            "total_spending": 28379.91,
+            "loyalty_points": 2291
+        },
+        {
+            "customer_id": 166,
+            "customer_name": "Customer_0166",
+            "total_spending": 17610.56,
+            "loyalty_points": 4931
+        },
+        {
+            "customer_id": 167,
+            "customer_name": "Customer_0167",
+            "total_spending": 1104.51,
+            "loyalty_points": 3811
+        },
+        {
+            "customer_id": 168,
+            "customer_name": "Customer_0168",
+            "total_spending": 5590.7,
+            "loyalty_points": 4993
+        },
+        {
+            "customer_id": 169,
+            "customer_name": "Customer_0169",
+            "total_spending": 14589.81,
+            "loyalty_points": 931
+        },
+        {
+            "customer_id": 170,
+            "customer_name": "Customer_0170",
+            "total_spending": 11691.23,
+            "loyalty_points": 2138
+        },
+        {
+            "customer_id": 171,
+            "customer_name": "Customer_0171",
+            "total_spending": 15456.14,
+            "loyalty_points": 4002
+        },
+        {
+            "customer_id": 172,
+            "customer_name": "Customer_0172",
+            "total_spending": 8478.73,
+            "loyalty_points": 2978
+        },
+        {
+            "customer_id": 173,
+            "customer_name": "Customer_0173",
+            "total_spending": 29234.89,
+            "loyalty_points": 3892
+        },
+        {
+            "customer_id": 174,
+            "customer_name": "Customer_0174",
+            "total_spending": 28335.43,
+            "loyalty_points": 4595
+        },
+        {
+            "customer_id": 175,
+            "customer_name": "Customer_0175",
+            "total_spending": 14049.16,
+            "loyalty_points": 2918
+        },
+        {
+            "customer_id": 176,
+            "customer_name": "Customer_0176",
+            "total_spending": 25286.27,
+            "loyalty_points": 2564
+        },
+        {
+            "customer_id": 177,
+            "customer_name": "Customer_0177",
+            "total_spending": 9540.89,
+            "loyalty_points": 1763
+        },
+        {
+            "customer_id": 178,
+            "customer_name": "Customer_0178",
+            "total_spending": 22510.34,
+            "loyalty_points": 2170
+        },
+        {
+            "customer_id": 179,
+            "customer_name": "Customer_0179",
+            "total_spending": 15120.57,
+            "loyalty_points": 335
+        },
+        {
+            "customer_id": 180,
+            "customer_name": "Customer_0180",
+            "total_spending": 32081.75,
+            "loyalty_points": 1176
+        },
+        {
+            "customer_id": 181,
+            "customer_name": "Customer_0181",
+            "total_spending": 27758.75,
+            "loyalty_points": 3021
+        },
+        {
+            "customer_id": 182,
+            "customer_name": "Customer_0182",
+            "total_spending": 17844.5,
+            "loyalty_points": 778
+        },
+        {
+            "customer_id": 183,
+            "customer_name": "Customer_0183",
+            "total_spending": 14612.52,
+            "loyalty_points": 1185
+        },
+        {
+            "customer_id": 184,
+            "customer_name": "Customer_0184",
+            "total_spending": 14162.86,
+            "loyalty_points": 3285
+        },
+        {
+            "customer_id": 185,
+            "customer_name": "Customer_0185",
+            "total_spending": 23487.38,
+            "loyalty_points": 3447
+        },
+        {
+            "customer_id": 186,
+            "customer_name": "Customer_0186",
+            "total_spending": 23429.37,
+            "loyalty_points": 3991
+        },
+        {
+            "customer_id": 187,
+            "customer_name": "Customer_0187",
+            "total_spending": 16465.53,
+            "loyalty_points": 2470
+        },
+        {
+            "customer_id": 188,
+            "customer_name": "Customer_0188",
+            "total_spending": 27914.3,
+            "loyalty_points": 938
+        },
+        {
+            "customer_id": 189,
+            "customer_name": "Customer_0189",
+            "total_spending": 8111.43,
+            "loyalty_points": 4899
+        },
+        {
+            "customer_id": 190,
+            "customer_name": "Customer_0190",
+            "total_spending": 18209.57,
+            "loyalty_points": 4006
+        },
+        {
+            "customer_id": 191,
+            "customer_name": "Customer_0191",
+            "total_spending": 13483.69,
+            "loyalty_points": 1935
+        },
+        {
+            "customer_id": 192,
+            "customer_name": "Customer_0192",
+            "total_spending": 4714.110000000001,
+            "loyalty_points": 633
+        },
+        {
+            "customer_id": 193,
+            "customer_name": "Customer_0193",
+            "total_spending": 3834.34,
+            "loyalty_points": 1253
+        },
+        {
+            "customer_id": 194,
+            "customer_name": "Customer_0194",
+            "total_spending": 14818.279999999999,
+            "loyalty_points": 1082
+        },
+        {
+            "customer_id": 195,
+            "customer_name": "Customer_0195",
+            "total_spending": 29406.56,
+            "loyalty_points": 2143
+        },
+        {
+            "customer_id": 196,
+            "customer_name": "Customer_0196",
+            "total_spending": 14553.51,
+            "loyalty_points": 1285
+        },
+        {
+            "customer_id": 197,
+            "customer_name": "Customer_0197",
+            "total_spending": 24647.89,
+            "loyalty_points": 353
+        },
+        {
+            "customer_id": 198,
+            "customer_name": "Customer_0198",
+            "total_spending": 20260.1,
+            "loyalty_points": 1885
+        },
+        {
+            "customer_id": 199,
+            "customer_name": "Customer_0199",
+            "total_spending": 11293.82,
+            "loyalty_points": 1818
+        },
+        {
+            "customer_id": 200,
+            "customer_name": "Customer_0200",
+            "total_spending": 43343.56,
+            "loyalty_points": 2520
+        },
+        {
+            "customer_id": 201,
+            "customer_name": "Customer_0201",
+            "total_spending": 14124.46,
+            "loyalty_points": 4008
+        }
+    ]
+};
+        
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+            
+            let activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            let targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+        }
+
+        // Formatters
+        const formatINR = (val) => {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+        };
+        
+        const formatInt = (val) => {
+            return new Intl.NumberFormat('en-IN').format(val);
+        };
+
+        // Set KPIs
+        document.getElementById('kpi-rev').innerText = formatINR(dashboardData.kpis.total_revenue);
+        document.getElementById('kpi-profit').innerText = formatINR(dashboardData.kpis.total_profit);
+        document.getElementById('kpi-margin').innerText = dashboardData.kpis.overall_margin.toFixed(2) + "%";
+        document.getElementById('kpi-orders').innerText = formatInt(dashboardData.kpis.total_orders);
+        document.getElementById('kpi-aov').innerText = formatINR(dashboardData.kpis.aov);
+        document.getElementById('kpi-rating').innerText = dashboardData.kpis.avg_rating.toFixed(2) + " ⭐";
+        
+        document.getElementById('bcg-bench-qty').innerText = formatInt(dashboardData.bcg_benchmarks.avg_qty);
+        document.getElementById('bcg-bench-margin').innerText = formatINR(dashboardData.bcg_benchmarks.avg_margin);
+
+        // Populate Branch Table
+        const branchTbody = document.getElementById('branch-table-tbody');
+        dashboardData.branch_stats.forEach(b => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">${b.branch_name}</td>
+                <td style="font-weight:600;">${formatINR(b.revenue)}</td>
+                <td style="color: var(--accent-emerald); font-weight:600;">${formatINR(b.profit)}</td>
+                <td>${formatInt(b.orders)}</td>
+                <td>${b.seating_cap} seats</td>
+                <td>${formatINR(b.revenue_per_seat)} / seat</td>
+                <td style="font-weight:600; color: var(--accent-teal);">${formatINR(b.profit_per_seat)} / seat</td>
+            `;
+            branchTbody.appendChild(tr);
+        });
+
+        // Populate BCG Table
+        const bcgTbody = document.getElementById('bcg-table-tbody');
+        dashboardData.menu_bcg.forEach(item => {
+            const tr = document.createElement('tr');
+            
+            let badgeClass = 'dog';
+            if (item.menu_category === 'Star') badgeClass = 'star';
+            else if (item.menu_category === 'Plowhorse') badgeClass = 'plowhorse';
+            else if (item.menu_category === 'Puzzle') badgeClass = 'puzzle';
+            
+            tr.innerHTML = `
+                <td style="font-weight:600;">${item.item_name}</td>
+                <td>${item.category_name}</td>
+                <td>${formatInt(item.total_quantity_sold)}</td>
+                <td style="font-weight:600;">${formatINR(item.unit_contribution_margin)}</td>
+                <td><span class="badge ${badgeClass}">${item.menu_category}</span></td>
+            `;
+            bcgTbody.appendChild(tr);
+        });
+
+        // Populate Customer Table
+        const customerTbody = document.getElementById('customer-table-tbody');
+        dashboardData.customer_type_perf.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">${c.customer_type}</td>
+                <td>${formatINR(c.revenue)}</td>
+                <td style="font-weight:600; color: var(--accent-emerald);">${formatINR(c.profit)}</td>
+                <td>${formatInt(c.customers)}</td>
+            `;
+            customerTbody.appendChild(tr);
+        });
+
+        // ----------------------------------------------------
+        // CHARTS SETUP (Chart.js)
+        // ----------------------------------------------------
+        
+        // 1. Monthly Trends Chart
+        const ctxMonthly = document.getElementById('chart-monthly-trend').getContext('2d');
+        const months = dashboardData.monthly_stats.map(m => m.month_label);
+        const revenues = dashboardData.monthly_stats.map(m => m.revenue);
+        const profits = dashboardData.monthly_stats.map(m => m.profit);
+        
+        new Chart(ctxMonthly, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Net Revenue',
+                        data: revenues,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        fill: true
+                    },
+                    {
+                        label: 'Operating Profit',
+                        data: profits,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f3f4f6' } }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#9ca3af' } },
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#9ca3af', callback: function(value) { return '₹' + value.toLocaleString(); } } }
+                }
+            }
+        });
+
+        // 2. Category Breakdown Chart
+        const ctxCategory = document.getElementById('chart-category-breakdown').getContext('2d');
+        const categories = dashboardData.category_stats.map(c => c.category_name);
+        const catRevenues = dashboardData.category_stats.map(c => c.revenue);
+        const catMargins = dashboardData.category_stats.map(c => c.margin_pct);
+        
+        new Chart(ctxCategory, {
+            type: 'bar',
+            data: {
+                labels: categories,
+                datasets: [
+                    {
+                        label: 'Revenue (Rs.)',
+                        data: catRevenues,
+                        backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                        borderColor: '#6366f1',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Margin %',
+                        data: catMargins,
+                        type: 'line',
+                        borderColor: '#eab308',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#eab308',
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f3f4f6' } }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#9ca3af' } },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                        ticks: { color: '#9ca3af', callback: function(value) { return '₹' + value.toLocaleString(); } }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#9ca3af', callback: function(value) { return value + '%'; } }
+                    }
+                }
+            }
+        });
+
+        // 3. BCG Scatter Plot
+        const ctxBCG = document.getElementById('chart-bcg-scatter').getContext('2d');
+        const bcgPoints = dashboardData.menu_bcg.map(item => ({
+            x: item.total_quantity_sold,
+            y: item.unit_contribution_margin,
+            label: item.item_name,
+            segment: item.menu_category
+        }));
+        
+        const segmentColors = {
+            'Star': '#10b981',
+            'Plowhorse': '#3b82f6',
+            'Puzzle': '#f59e0b',
+            'Dog': '#f43f5e'
+        };
+        
+        new Chart(ctxBCG, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: bcgPoints,
+                    pointBackgroundColor: bcgPoints.map(p => segmentColors[p.segment]),
+                    pointBorderColor: 'rgba(0, 0, 0, 0.6)',
+                    pointRadius: 8,
+                    pointHoverRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const p = context.raw;
+                                return `${p.label} (${p.segment}): Sold ${formatInt(p.x)} | Margin: ${formatINR(p.y)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                        ticks: { color: '#9ca3af' },
+                        title: { display: true, text: 'Total Quantity Sold', color: '#9ca3af' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                        ticks: { color: '#9ca3af', callback: function(value) { return '₹' + value.toLocaleString(); } },
+                        title: { display: true, text: 'Unit Contribution Margin (Rs.)', color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+
+        // 4. Order Type mix
+        const ctxOrderType = document.getElementById('chart-order-type').getContext('2d');
+        new Chart(ctxOrderType, {
+            type: 'doughnut',
+            data: {
+                labels: dashboardData.order_type_perf.map(o => o.order_type),
+                datasets: [{
+                    data: dashboardData.order_type_perf.map(o => o.net_sales),
+                    backgroundColor: ['#6366f1', '#10b981', '#3b82f6'],
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,0,0,0.5)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#f3f4f6' } }
+                }
+            }
+        });
+
+        // 5. Payment Method mix
+        const ctxPayment = document.getElementById('chart-payment-method').getContext('2d');
+        new Chart(ctxPayment, {
+            type: 'doughnut',
+            data: {
+                labels: dashboardData.payment_perf.map(p => p.payment_method),
+                datasets: [{
+                    data: dashboardData.payment_perf.map(p => p.net_sales),
+                    backgroundColor: ['#0d9488', '#f59e0b', '#3b82f6', '#6366f1', '#f43f5e'],
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,0,0,0.5)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#f3f4f6', boxWidth: 12 } }
+                }
+            }
+        });
+
+        // 6. Weekly Pattern
+        const ctxWeekly = document.getElementById('chart-weekly-pattern').getContext('2d');
+        new Chart(ctxWeekly, {
+            type: 'bar',
+            data: {
+                labels: dashboardData.day_perf.map(d => d.day_name),
+                datasets: [{
+                    data: dashboardData.day_perf.map(d => d.orders),
+                    backgroundColor: 'rgba(13, 148, 136, 0.8)',
+                    borderColor: '#0d9488',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
+                    y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.04)' } }
+                }
+            }
+        });
+
+        // 7. Customer segments
+        const ctxCustType = document.getElementById('chart-customer-segments').getContext('2d');
+        new Chart(ctxCustType, {
+            type: 'pie',
+            data: {
+                labels: dashboardData.customer_type_perf.map(c => c.customer_type),
+                datasets: [{
+                    data: dashboardData.customer_type_perf.map(c => c.profit),
+                    backgroundColor: ['#6366f1', '#10b981', '#3b82f6', '#f59e0b'],
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,0,0,0.5)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#f3f4f6' } }
+                }
+            }
+        });
+
+        // 8. Age Spending
+        const ctxAge = document.getElementById('chart-age-spending').getContext('2d');
+        new Chart(ctxAge, {
+            type: 'bar',
+            data: {
+                labels: dashboardData.age_group_perf.map(a => a.age_group),
+                datasets: [{
+                    label: 'Net Revenue',
+                    data: dashboardData.age_group_perf.map(a => a.revenue),
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: '#3b82f6',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
+                    y: { ticks: { color: '#9ca3af', callback: function(value) { return '₹' + value.toLocaleString(); } }, grid: { color: 'rgba(255, 255, 255, 0.04)' } }
+                }
+            }
+        });
+
+        // 9. Loyalty spending scatter
+        const ctxLoyalty = document.getElementById('chart-loyalty-scatter').getContext('2d');
+        const loyaltyPoints = dashboardData.loyalty_sample.map(c => ({
+            x: c.loyalty_points,
+            y: c.total_spending,
+            label: c.customer_name
+        }));
+        
+        new Chart(ctxLoyalty, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: loyaltyPoints,
+                    pointBackgroundColor: 'rgba(99, 102, 241, 0.7)',
+                    pointBorderColor: '#6366f1',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const p = context.raw;
+                                return `${p.label}: Points: ${formatInt(p.x)} | Spend: ${formatINR(p.y)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#9ca3af' }, title: { display: true, text: 'Customer Loyalty Points', color: '#9ca3af' } },
+                    y: { ticks: { color: '#9ca3af', callback: function(value) { return '₹' + value.toLocaleString(); } }, title: { display: true, text: 'Total Spending (Rs.)', color: '#9ca3af' } }
+                }
+            }
+        });
+        
+    </script>
+</body>
+</html>

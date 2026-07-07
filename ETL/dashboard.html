@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Menu Engineering & Profitability Analysis Dashboard</title>
+    
+    <!-- Outfit & Inter Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-base: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-card-hover: rgba(30, 41, 59, 0.85);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            
+            /* BCG Colors */
+            --color-star: #10b981;
+            --color-plowhorse: #3b82f6;
+            --color-puzzle: #f59e0b;
+            --color-dog: #f43f5e;
+            
+            /* Theme Accents */
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+        
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(20, 184, 166, 0.12) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+        
+        /* Glassmorphic Styles */
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .glass-panel:hover {
+            background: var(--bg-card-hover);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Layout Structure */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--border-card);
+            margin: -24px -24px 0 -24px;
+            backdrop-filter: blur(8px);
+        }
+        
+        header h1 {
+            font-size: 28px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-meta {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab-btn.active {
+            background: var(--accent-purple);
+            color: white;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 16px rgba(139, 92, 246, 0.4);
+        }
+        
+        /* Dashboard Views */
+        .dashboard-view {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .dashboard-view.active {
+            display: flex;
+        }
+        
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .kpi-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-teal);
+            border-radius: 4px 0 0 4px;
+        }
+        
+        .kpi-card.purple::before {
+            background: var(--accent-purple);
+        }
+        
+        .kpi-card.star::before {
+            background: var(--color-star);
+        }
+        
+        .kpi-card.puzzle::before {
+            background: var(--color-puzzle);
+        }
+        
+        .kpi-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        
+        /* Grid Layouts */
+        .dashboard-row-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+        }
+        
+        .dashboard-row-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge.star {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--color-star);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge.plowhorse {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--color-plowhorse);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .badge.puzzle {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--color-puzzle);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .badge.dog {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--color-dog);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+        
+        .badge.veg {
+            background: rgba(20, 184, 166, 0.15);
+            color: var(--accent-teal);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+        }
+        
+        .badge.nonveg {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--color-dog);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+        
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        /* Menu filter controls */
+        .filter-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .search-input {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 16px;
+            font-size: 14px;
+            outline: none;
+            width: 250px;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.2);
+        }
+        
+        .filter-select {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .legend-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-card);
+            font-size: 13px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            flex: 1;
+            padding: 0 10px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+        
+        .legend-text {
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        
+        .legend-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <div>
+            <h1>Restaurant Menu Analysis</h1>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Premium Analytics Dashboard & Menu Engineering (Star Schema Model)</p>
+        </div>
+        <div class="header-meta">
+            <div style="font-weight: 600;">Dataset Status: <span style="color: var(--accent-teal)">Cleaned & Verified</span></div>
+            <div style="font-size: 12px; margin-top: 4px;">Pipeline Engine: Python Pandas/Star Schema</div>
+        </div>
+    </header>
+
+    <!-- Tab navigation -->
+    <div class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('overview')">Overview Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('menu-engineering')">Menu Engineering (BCG)</button>
+        <button class="tab-btn" onclick="switchTab('branch-demographics')">Branch & Customer Insights</button>
+    </div>
+
+    <!-- VIEW 1: OVERVIEW -->
+    <div id="view-overview" class="dashboard-view active">
+        <!-- KPI Row -->
+        <div class="kpi-grid">
+            <div class="glass-panel kpi-card">
+                <div class="kpi-title">Net Sales</div>
+                <div class="kpi-value" id="kpi-sales">₹0.00</div>
+            </div>
+            <div class="glass-panel kpi-card purple">
+                <div class="kpi-title">Total Profit</div>
+                <div class="kpi-value" id="kpi-profit">₹0.00</div>
+            </div>
+            <div class="glass-panel kpi-card star">
+                <div class="kpi-title">Profit Margin</div>
+                <div class="kpi-value" id="kpi-margin">0.0%</div>
+            </div>
+            <div class="glass-panel kpi-card puzzle">
+                <div class="kpi-title">Total Orders</div>
+                <div class="kpi-value" id="kpi-orders">0</div>
+            </div>
+        </div>
+
+        <!-- Row 2: Monthly Trends & Location -->
+        <div class="dashboard-row-2">
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 15px;">Monthly Sales & Profit Trend</h3>
+                <div class="chart-container">
+                    <canvas id="chart-monthly-trend"></canvas>
+                </div>
+            </div>
+            
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 15px;">Branch Contribution Breakdown</h3>
+                <div class="chart-container">
+                    <canvas id="chart-branch-performance"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Row 3: Payment & Order Type Distribution -->
+        <div class="dashboard-row-3">
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 15px;">Order Type Performance</h3>
+                <div class="chart-container" style="height: 220px;">
+                    <canvas id="chart-order-types"></canvas>
+                </div>
+            </div>
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 15px;">Payment Method Distribution</h3>
+                <div class="chart-container" style="height: 220px;">
+                    <canvas id="chart-payments"></canvas>
+                </div>
+            </div>
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 15px;">Menu Category Performance</h3>
+                <div class="chart-container" style="height: 220px;">
+                    <canvas id="chart-menu-categories"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: MENU ENGINEERING (BCG MATRIX) -->
+    <div id="view-menu-engineering" class="dashboard-view">
+        <div class="dashboard-row-2">
+            <!-- BCG Scatter Plot Chart -->
+            <div class="glass-panel" style="flex: 1.3;">
+                <h3 style="margin-bottom: 5px;">Interactive BCG Menu Engineering Matrix</h3>
+                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">
+                    Hover over dots to see item names, volume sold, and unit margins. Quad lines denote category averages.
+                </p>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="chart-bcg-scatter"></canvas>
+                </div>
+                
+                <!-- BCG Quadrant Legend / Explanation -->
+                <div class="legend-container">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--color-star);"></div>
+                        <div class="legend-text">
+                            <div class="legend-name" style="color: var(--color-star);">Stars</div>
+                            <div>High popularity, High profitability. Keep these prominent and maintain quality.</div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--color-plowhorse);"></div>
+                        <div class="legend-text">
+                            <div class="legend-name" style="color: var(--color-plowhorse);">Plowhorses</div>
+                            <div>High popularity, Low profitability. Try slightly raising prices or reducing cost sizes.</div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--color-puzzle);"></div>
+                        <div class="legend-text">
+                            <div class="legend-name" style="color: var(--color-puzzle);">Puzzles</div>
+                            <div>Low popularity, High profitability. Improve marketing or menu placement.</div>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--color-dog);"></div>
+                        <div class="legend-text">
+                            <div class="legend-name" style="color: var(--color-dog);">Dogs</div>
+                            <div>Low popularity, Low profitability. Consider replacing or redesigning these items.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BCG Category Profit distribution -->
+            <div class="glass-panel" style="flex: 0.7; display: flex; flex-direction: column;">
+                <h3 style="margin-bottom: 15px;">Profit Distribution by BCG Class</h3>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="chart-bcg-profit"></canvas>
+                </div>
+                <div style="margin-top: 20px; font-size: 13px; color: var(--text-secondary);">
+                    <h4 style="color: white; margin-bottom: 8px; font-size: 14px;">Strategic Takeaway</h4>
+                    <p style="line-height: 1.4; margin-bottom: 8px;">
+                        <strong>Stars</strong> and <strong>Puzzles</strong> provide premium margins per unit, while <strong>Plowhorses</strong> drive volume and cash flow.
+                    </p>
+                    <p style="line-height: 1.4;">
+                        Target <strong>Dogs</strong> and <strong>Plowhorses</strong> for recipe costing optimization to improve the overall blend margin.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Item Detail Table -->
+        <div class="glass-panel">
+            <div class="filter-controls">
+                <h3>Menu Items Engineering Performance List</h3>
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="table-search" class="search-input" placeholder="Search item name..." oninput="filterTable()">
+                    <select id="table-filter-cat" class="filter-select" onchange="filterTable()">
+                        <option value="All">All BCG Categories</option>
+                        <option value="Star">Stars</option>
+                        <option value="Plowhorse">Plowhorses</option>
+                        <option value="Puzzle">Puzzles</option>
+                        <option value="Dog">Dogs</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-wrapper">
+                <table id="menu-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Veg?</th>
+                            <th>Base Price</th>
+                            <th>Base Cost</th>
+                            <th>Units Sold</th>
+                            <th>Unit Margin</th>
+                            <th>Total Profit</th>
+                            <th>BCG Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menu-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: BRANCH & CUSTOMER DEMOGRAPHICS -->
+    <div id="view-branch-demographics" class="dashboard-view">
+        <div class="dashboard-row-2">
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 15px;">Branch Sales Breakdown</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>City</th>
+                                <th>Region</th>
+                                <th>Revenue</th>
+                                <th>Profit</th>
+                                <th>Orders</th>
+                                <th>Qty Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody id="branch-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 15px;">Customer Type Breakdown</h3>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="chart-customers"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Embed compiled data from python script
+        const data = {
+    "kpis": {
+        "total_revenue": 54551551.95,
+        "total_profit": 38091265.2,
+        "total_orders": 15000,
+        "total_items_sold": 137151,
+        "average_rating": 4.092137568755828,
+        "profit_margin": 69.82618062802887
+    },
+    "monthly_trend": [
+        {
+            "year_month": "2022-01",
+            "net_sales": 1611396.58,
+            "profit": 1124986.13
+        },
+        {
+            "year_month": "2022-02",
+            "net_sales": 1426762.55,
+            "profit": 990307.43
+        },
+        {
+            "year_month": "2022-03",
+            "net_sales": 1554298.36,
+            "profit": 1086695.27
+        },
+        {
+            "year_month": "2022-04",
+            "net_sales": 1501912.37,
+            "profit": 1051362.04
+        },
+        {
+            "year_month": "2022-05",
+            "net_sales": 1524148.04,
+            "profit": 1066860.14
+        },
+        {
+            "year_month": "2022-06",
+            "net_sales": 1669083.17,
+            "profit": 1170559.8
+        },
+        {
+            "year_month": "2022-07",
+            "net_sales": 1577363.31,
+            "profit": 1106116.1
+        },
+        {
+            "year_month": "2022-08",
+            "net_sales": 1638784.54,
+            "profit": 1142164.62
+        },
+        {
+            "year_month": "2022-09",
+            "net_sales": 1443894.18,
+            "profit": 1011272.26
+        },
+        {
+            "year_month": "2022-10",
+            "net_sales": 1471172.28,
+            "profit": 1029527.83
+        },
+        {
+            "year_month": "2022-11",
+            "net_sales": 1594275.01,
+            "profit": 1113905.26
+        },
+        {
+            "year_month": "2022-12",
+            "net_sales": 1617769.03,
+            "profit": 1127278.16
+        },
+        {
+            "year_month": "2023-01",
+            "net_sales": 1488882.43,
+            "profit": 1033366.39
+        },
+        {
+            "year_month": "2023-02",
+            "net_sales": 1465726.03,
+            "profit": 1022044.24
+        },
+        {
+            "year_month": "2023-03",
+            "net_sales": 1572402.23,
+            "profit": 1095969.57
+        },
+        {
+            "year_month": "2023-04",
+            "net_sales": 1540090.28,
+            "profit": 1077518.74
+        },
+        {
+            "year_month": "2023-05",
+            "net_sales": 1468256.83,
+            "profit": 1026580.01
+        },
+        {
+            "year_month": "2023-06",
+            "net_sales": 1427273.24,
+            "profit": 993598.79
+        },
+        {
+            "year_month": "2023-07",
+            "net_sales": 1609322.08,
+            "profit": 1114283.9
+        },
+        {
+            "year_month": "2023-08",
+            "net_sales": 1614677.18,
+            "profit": 1124104.75
+        },
+        {
+            "year_month": "2023-09",
+            "net_sales": 1514692.66,
+            "profit": 1063482.92
+        },
+        {
+            "year_month": "2023-10",
+            "net_sales": 1361148.35,
+            "profit": 945016.82
+        },
+        {
+            "year_month": "2023-11",
+            "net_sales": 1390029.32,
+            "profit": 969547.14
+        },
+        {
+            "year_month": "2023-12",
+            "net_sales": 1540319.95,
+            "profit": 1075035.55
+        },
+        {
+            "year_month": "2024-01",
+            "net_sales": 1579816.87,
+            "profit": 1104126.95
+        },
+        {
+            "year_month": "2024-02",
+            "net_sales": 1421780.23,
+            "profit": 990979.41
+        },
+        {
+            "year_month": "2024-03",
+            "net_sales": 1486342.33,
+            "profit": 1046118.94
+        },
+        {
+            "year_month": "2024-04",
+            "net_sales": 1574127.63,
+            "profit": 1097420.85
+        },
+        {
+            "year_month": "2024-05",
+            "net_sales": 1539906.34,
+            "profit": 1077413.36
+        },
+        {
+            "year_month": "2024-06",
+            "net_sales": 1558491.87,
+            "profit": 1087653.29
+        },
+        {
+            "year_month": "2024-07",
+            "net_sales": 1515694.33,
+            "profit": 1059887.44
+        },
+        {
+            "year_month": "2024-08",
+            "net_sales": 1646979.28,
+            "profit": 1154015.53
+        },
+        {
+            "year_month": "2024-09",
+            "net_sales": 1394071.76,
+            "profit": 971610.03
+        },
+        {
+            "year_month": "2024-10",
+            "net_sales": 1460825.42,
+            "profit": 1021239.22
+        },
+        {
+            "year_month": "2024-11",
+            "net_sales": 1308710.94,
+            "profit": 913959.5599999999
+        },
+        {
+            "year_month": "2024-12",
+            "net_sales": 1441124.95,
+            "profit": 1005256.76
+        }
+    ],
+    "branch_performance": [
+        {
+            "branch_name": "Airport",
+            "city": "Delhi",
+            "region": "North",
+            "revenue": 11372300.62,
+            "profit": 8042737.22,
+            "orders": 2990,
+            "qty_sold": 27526
+        },
+        {
+            "branch_name": "Beach",
+            "city": "Goa",
+            "region": "West",
+            "revenue": 11787398.62,
+            "profit": 8499134.71,
+            "orders": 3019,
+            "qty_sold": 27693
+        },
+        {
+            "branch_name": "Downtown",
+            "city": "Mumbai",
+            "region": "West",
+            "revenue": 10886187.92,
+            "profit": 7545858.04,
+            "orders": 3008,
+            "qty_sold": 27772
+        },
+        {
+            "branch_name": "Mall",
+            "city": "Bangalore",
+            "region": "South",
+            "revenue": 10965792.27,
+            "profit": 7692750.26,
+            "orders": 2992,
+            "qty_sold": 27265
+        },
+        {
+            "branch_name": "Suburb",
+            "city": "Chennai",
+            "region": "South",
+            "revenue": 9539872.52,
+            "profit": 6310784.97,
+            "orders": 2991,
+            "qty_sold": 26895
+        }
+    ],
+    "menu_category_performance": [
+        {
+            "menu_category": "Dog",
+            "revenue": 9435116.91,
+            "profit": 6814516.56,
+            "qty_sold": 33319
+        },
+        {
+            "menu_category": "Plowhorse",
+            "revenue": 14947441.28,
+            "profit": 11064971.49,
+            "qty_sold": 61855
+        },
+        {
+            "menu_category": "Puzzle",
+            "revenue": 9697630.66,
+            "profit": 6480614.97,
+            "qty_sold": 12812
+        },
+        {
+            "menu_category": "Star",
+            "revenue": 20471363.1,
+            "profit": 13731162.18,
+            "qty_sold": 29165
+        }
+    ],
+    "menu_items": [
+        {
+            "item_id": 1,
+            "item_name": "Paneer Tikka",
+            "category_id": 1,
+            "base_price": 280,
+            "base_cost": 90,
+            "is_vegetarian": "Yes",
+            "category_name": "Starters",
+            "category_description": "Appetizers and soups",
+            "total_quantity_sold": 2764,
+            "unit_contribution_margin": 201.29,
+            "menu_category": "Dog",
+            "total_revenue": 806068.15,
+            "total_profit": 556357.71,
+            "avg_rating": 4.04
+        },
+        {
+            "item_id": 2,
+            "item_name": "Chicken Wings",
+            "category_id": 1,
+            "base_price": 320,
+            "base_cost": 110,
+            "is_vegetarian": "No",
+            "category_name": "Starters",
+            "category_description": "Appetizers and soups",
+            "total_quantity_sold": 3934,
+            "unit_contribution_margin": 221.16,
+            "menu_category": "Dog",
+            "total_revenue": 1302989.33,
+            "total_profit": 870026.7,
+            "avg_rating": 4.08
+        },
+        {
+            "item_id": 3,
+            "item_name": "Veg Spring Rolls",
+            "category_id": 1,
+            "base_price": 220,
+            "base_cost": 65,
+            "is_vegetarian": "Yes",
+            "category_name": "Starters",
+            "category_description": "Appetizers and soups",
+            "total_quantity_sold": 4934,
+            "unit_contribution_margin": 163.04,
+            "menu_category": "Plowhorse",
+            "total_revenue": 1125577.38,
+            "total_profit": 804462.93,
+            "avg_rating": 4.08
+        },
+        {
+            "item_id": 4,
+            "item_name": "Fish Tacos",
+            "category_id": 1,
+            "base_price": 350,
+            "base_cost": 130,
+            "is_vegetarian": "No",
+            "category_name": "Starters",
+            "category_description": "Appetizers and soups",
+            "total_quantity_sold": 2110,
+            "unit_contribution_margin": 232.14,
+            "menu_category": "Dog",
+            "total_revenue": 764308.36,
+            "total_profit": 489810.02,
+            "avg_rating": 4.15
+        },
+        {
+            "item_id": 5,
+            "item_name": "Soup of the Day",
+            "category_id": 1,
+            "base_price": 150,
+            "base_cost": 45,
+            "is_vegetarian": "Yes",
+            "category_name": "Starters",
+            "category_description": "Appetizers and soups",
+            "total_quantity_sold": 2850,
+            "unit_contribution_margin": 110.31,
+            "menu_category": "Dog",
+            "total_revenue": 442387.25,
+            "total_profit": 314395.83,
+            "avg_rating": 4.1
+        },
+        {
+            "item_id": 6,
+            "item_name": "Butter Chicken",
+            "category_id": 2,
+            "base_price": 420,
+            "base_cost": 140,
+            "is_vegetarian": "No",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 7479,
+            "unit_contribution_margin": 297.21,
+            "menu_category": "Plowhorse",
+            "total_revenue": 3270538.26,
+            "total_profit": 2222800.19,
+            "avg_rating": 4.08
+        },
+        {
+            "item_id": 7,
+            "item_name": "Dal Makhani",
+            "category_id": 2,
+            "base_price": 320,
+            "base_cost": 80,
+            "is_vegetarian": "Yes",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 5751,
+            "unit_contribution_margin": 252.8,
+            "menu_category": "Plowhorse",
+            "total_revenue": 1914886.62,
+            "total_profit": 1453844.83,
+            "avg_rating": 4.12
+        },
+        {
+            "item_id": 8,
+            "item_name": "Grilled Salmon",
+            "category_id": 2,
+            "base_price": 650,
+            "base_cost": 220,
+            "is_vegetarian": "No",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 2901,
+            "unit_contribution_margin": 451.34,
+            "menu_category": "Puzzle",
+            "total_revenue": 1947002.25,
+            "total_profit": 1309332.25,
+            "avg_rating": 4.08
+        },
+        {
+            "item_id": 9,
+            "item_name": "Pasta Arrabiata",
+            "category_id": 2,
+            "base_price": 380,
+            "base_cost": 95,
+            "is_vegetarian": "Yes",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 3913,
+            "unit_contribution_margin": 299.35,
+            "menu_category": "Dog",
+            "total_revenue": 1542740.77,
+            "total_profit": 1171342.25,
+            "avg_rating": 4.06
+        },
+        {
+            "item_id": 10,
+            "item_name": "Lamb Biryani",
+            "category_id": 2,
+            "base_price": 520,
+            "base_cost": 180,
+            "is_vegetarian": "No",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 4724,
+            "unit_contribution_margin": 359.76,
+            "menu_category": "Star",
+            "total_revenue": 2547069.18,
+            "total_profit": 1699490.85,
+            "avg_rating": 4.08
+        },
+        {
+            "item_id": 11,
+            "item_name": "Veg Biryani",
+            "category_id": 2,
+            "base_price": 380,
+            "base_cost": 100,
+            "is_vegetarian": "Yes",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 6314,
+            "unit_contribution_margin": 293.86,
+            "menu_category": "Plowhorse",
+            "total_revenue": 2486493.22,
+            "total_profit": 1855402.65,
+            "avg_rating": 4.11
+        },
+        {
+            "item_id": 12,
+            "item_name": "Pizza Margherita",
+            "category_id": 2,
+            "base_price": 340,
+            "base_cost": 85,
+            "is_vegetarian": "Yes",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 7982,
+            "unit_contribution_margin": 267.69,
+            "menu_category": "Plowhorse",
+            "total_revenue": 2816492.5,
+            "total_profit": 2136703.23,
+            "avg_rating": 4.11
+        },
+        {
+            "item_id": 13,
+            "item_name": "Chicken Tikka Masala",
+            "category_id": 2,
+            "base_price": 440,
+            "base_cost": 150,
+            "is_vegetarian": "No",
+            "category_name": "Main Course",
+            "category_description": "Rice, pasta, curries, grills",
+            "total_quantity_sold": 6490,
+            "unit_contribution_margin": 308.13,
+            "menu_category": "Star",
+            "total_revenue": 2973847.76,
+            "total_profit": 1999743.4,
+            "avg_rating": 4.1
+        },
+        {
+            "item_id": 14,
+            "item_name": "Chocolate Lava Cake",
+            "category_id": 3,
+            "base_price": 280,
+            "base_cost": 70,
+            "is_vegetarian": "Yes",
+            "category_name": "Desserts",
+            "category_description": "Sweets, ice creams, pastries",
+            "total_quantity_sold": 3827,
+            "unit_contribution_margin": 220.21,
+            "menu_category": "Dog",
+            "total_revenue": 1111197.42,
+            "total_profit": 842731.52,
+            "avg_rating": 4.13
+        },
+        {
+            "item_id": 15,
+            "item_name": "Tiramisu",
+            "category_id": 3,
+            "base_price": 300,
+            "base_cost": 90,
+            "is_vegetarian": "Yes",
+            "category_name": "Desserts",
+            "category_description": "Sweets, ice creams, pastries",
+            "total_quantity_sold": 3103,
+            "unit_contribution_margin": 223.34,
+            "menu_category": "Dog",
+            "total_revenue": 971645.45,
+            "total_profit": 693026.9,
+            "avg_rating": 4.1
+        },
+        {
+            "item_id": 16,
+            "item_name": "Gulab Jamun",
+            "category_id": 3,
+            "base_price": 160,
+            "base_cost": 40,
+            "is_vegetarian": "Yes",
+            "category_name": "Desserts",
+            "category_description": "Sweets, ice creams, pastries",
+            "total_quantity_sold": 4926,
+            "unit_contribution_margin": 125.96,
+            "menu_category": "Plowhorse",
+            "total_revenue": 817841.59,
+            "total_profit": 620490.05,
+            "avg_rating": 4.09
+        },
+        {
+            "item_id": 17,
+            "item_name": "Ice Cream Sundae",
+            "category_id": 3,
+            "base_price": 220,
+            "base_cost": 55,
+            "is_vegetarian": "Yes",
+            "category_name": "Desserts",
+            "category_description": "Sweets, ice creams, pastries",
+            "total_quantity_sold": 4010,
+            "unit_contribution_margin": 173.41,
+            "menu_category": "Dog",
+            "total_revenue": 915485.78,
+            "total_profit": 695361.09,
+            "avg_rating": 4.06
+        },
+        {
+            "item_id": 18,
+            "item_name": "Fresh Lime Soda",
+            "category_id": 4,
+            "base_price": 80,
+            "base_cost": 15,
+            "is_vegetarian": "Yes",
+            "category_name": "Beverages",
+            "category_description": "Juices, mocktails, hot drinks",
+            "total_quantity_sold": 5350,
+            "unit_contribution_margin": 68.07,
+            "menu_category": "Plowhorse",
+            "total_revenue": 444514.91,
+            "total_profit": 364177.16,
+            "avg_rating": 4.08
+        },
+        {
+            "item_id": 19,
+            "item_name": "Mango Lassi",
+            "category_id": 4,
+            "base_price": 120,
+            "base_cost": 30,
+            "is_vegetarian": "Yes",
+            "category_name": "Beverages",
+            "category_description": "Juices, mocktails, hot drinks",
+            "total_quantity_sold": 6714,
+            "unit_contribution_margin": 94.24,
+            "menu_category": "Plowhorse",
+            "total_revenue": 833816.17,
+            "total_profit": 632739.35,
+            "avg_rating": 4.11
+        },
+        {
+            "item_id": 20,
+            "item_name": "Cold Coffee",
+            "category_id": 4,
+            "base_price": 150,
+            "base_cost": 35,
+            "is_vegetarian": "Yes",
+            "category_name": "Beverages",
+            "category_description": "Juices, mocktails, hot drinks",
+            "total_quantity_sold": 4968,
+            "unit_contribution_margin": 120.58,
+            "menu_category": "Plowhorse",
+            "total_revenue": 772924.12,
+            "total_profit": 599037.87,
+            "avg_rating": 4.09
+        },
+        {
+            "item_id": 21,
+            "item_name": "Masala Chai",
+            "category_id": 4,
+            "base_price": 60,
+            "base_cost": 12,
+            "is_vegetarian": "Yes",
+            "category_name": "Beverages",
+            "category_description": "Juices, mocktails, hot drinks",
+            "total_quantity_sold": 7437,
+            "unit_contribution_margin": 50.47,
+            "menu_category": "Plowhorse",
+            "total_revenue": 464356.51,
+            "total_profit": 375313.23,
+            "avg_rating": 4.13
+        },
+        {
+            "item_id": 22,
+            "item_name": "Orange Juice",
+            "category_id": 4,
+            "base_price": 100,
+            "base_cost": 20,
+            "is_vegetarian": "Yes",
+            "category_name": "Beverages",
+            "category_description": "Juices, mocktails, hot drinks",
+            "total_quantity_sold": 3914,
+            "unit_contribution_margin": 83.96,
+            "menu_category": "Dog",
+            "total_revenue": 407198.61,
+            "total_profit": 328599.91,
+            "avg_rating": 4.1
+        },
+        {
+            "item_id": 23,
+            "item_name": "Family Feast",
+            "category_id": 5,
+            "base_price": 1200,
+            "base_cost": 420,
+            "is_vegetarian": "No",
+            "category_name": "Combos",
+            "category_description": "Value combo meals",
+            "total_quantity_sold": 4680,
+            "unit_contribution_margin": 821.96,
+            "menu_category": "Star",
+            "total_revenue": 5816967.81,
+            "total_profit": 3846765.68,
+            "avg_rating": 4.11
+        },
+        {
+            "item_id": 24,
+            "item_name": "Veg Combo Meal",
+            "category_id": 5,
+            "base_price": 480,
+            "base_cost": 160,
+            "is_vegetarian": "Yes",
+            "category_name": "Combos",
+            "category_description": "Value combo meals",
+            "total_quantity_sold": 7404,
+            "unit_contribution_margin": 337.3,
+            "menu_category": "Star",
+            "total_revenue": 3679834.35,
+            "total_profit": 2497404.94,
+            "avg_rating": 4.05
+        },
+        {
+            "item_id": 25,
+            "item_name": "Couple Dinner",
+            "category_id": 5,
+            "base_price": 900,
+            "base_cost": 300,
+            "is_vegetarian": "No",
+            "category_name": "Combos",
+            "category_description": "Value combo meals",
+            "total_quantity_sold": 5867,
+            "unit_contribution_margin": 628.56,
+            "menu_category": "Star",
+            "total_revenue": 5453644.0,
+            "total_profit": 3687757.31,
+            "avg_rating": 4.11
+        },
+        {
+            "item_id": 26,
+            "item_name": "Chef's Special Curry",
+            "category_id": 6,
+            "base_price": 580,
+            "base_cost": 200,
+            "is_vegetarian": "No",
+            "category_name": "Specials",
+            "category_description": "Chef specials and seasonal items",
+            "total_quantity_sold": 3120,
+            "unit_contribution_margin": 402.17,
+            "menu_category": "Puzzle",
+            "total_revenue": 1878183.88,
+            "total_profit": 1254772.9,
+            "avg_rating": 4.02
+        },
+        {
+            "item_id": 27,
+            "item_name": "Truffle Mushroom Risotto",
+            "category_id": 6,
+            "base_price": 620,
+            "base_cost": 190,
+            "is_vegetarian": "Yes",
+            "category_name": "Specials",
+            "category_description": "Chef specials and seasonal items",
+            "total_quantity_sold": 3884,
+            "unit_contribution_margin": 457.2,
+            "menu_category": "Puzzle",
+            "total_revenue": 2514735.31,
+            "total_profit": 1775750.55,
+            "avg_rating": 4.06
+        },
+        {
+            "item_id": 28,
+            "item_name": "Seared Duck Breast",
+            "category_id": 6,
+            "base_price": 750,
+            "base_cost": 270,
+            "is_vegetarian": "No",
+            "category_name": "Specials",
+            "category_description": "Chef specials and seasonal items",
+            "total_quantity_sold": 1900,
+            "unit_contribution_margin": 507.86,
+            "menu_category": "Puzzle",
+            "total_revenue": 1476914.78,
+            "total_profit": 964931.16,
+            "avg_rating": 4.09
+        },
+        {
+            "item_id": 29,
+            "item_name": "Quinoa Salad",
+            "category_id": 6,
+            "base_price": 390,
+            "base_cost": 110,
+            "is_vegetarian": "Yes",
+            "category_name": "Specials",
+            "category_description": "Chef specials and seasonal items",
+            "total_quantity_sold": 2894,
+            "unit_contribution_margin": 294.7,
+            "menu_category": "Dog",
+            "total_revenue": 1171095.79,
+            "total_profit": 852864.63,
+            "avg_rating": 4.13
+        },
+        {
+            "item_id": 30,
+            "item_name": "Lobster Thermidor",
+            "category_id": 6,
+            "base_price": 1800,
+            "base_cost": 700,
+            "is_vegetarian": "No",
+            "category_name": "Specials",
+            "category_description": "Chef specials and seasonal items",
+            "total_quantity_sold": 1007,
+            "unit_contribution_margin": 1167.65,
+            "menu_category": "Puzzle",
+            "total_revenue": 1880794.44,
+            "total_profit": 1175828.11,
+            "avg_rating": 4.04
+        }
+    ],
+    "payment_stats": [
+        {
+            "payment_method": "Card",
+            "revenue": 10884774.46,
+            "orders": 7535
+        },
+        {
+            "payment_method": "Cash",
+            "revenue": 10623752.62,
+            "orders": 7495
+        },
+        {
+            "payment_method": "Online",
+            "revenue": 11185219.68,
+            "orders": 7743
+        },
+        {
+            "payment_method": "UPI",
+            "revenue": 11026581.48,
+            "orders": 7651
+        },
+        {
+            "payment_method": "Wallet",
+            "revenue": 10831223.71,
+            "orders": 7622
+        }
+    ],
+    "order_type_stats": [
+        {
+            "order_type": "Delivery",
+            "revenue": 18534999.58,
+            "orders": 10552
+        },
+        {
+            "order_type": "Dine-In",
+            "revenue": 18034158.43,
+            "orders": 10481
+        },
+        {
+            "order_type": "Takeaway",
+            "revenue": 17982393.94,
+            "orders": 10433
+        }
+    ],
+    "customer_stats": [
+        {
+            "customer_type": "New",
+            "count": 719,
+            "avg_loyalty": 2452.1112656467317
+        },
+        {
+            "customer_type": "Occasional",
+            "count": 932,
+            "avg_loyalty": 2487.098712446352
+        },
+        {
+            "customer_type": "Regular",
+            "count": 1071,
+            "avg_loyalty": 2428.5219421101774
+        },
+        {
+            "customer_type": "VIP",
+            "count": 278,
+            "avg_loyalty": 2595.665467625899
+        }
+    ],
+    "benchmarks": {
+        "popularity": 4571.7,
+        "profitability": 307.8563358601458
+    }
+};
+        
+        // Tab switching
+        function switchTab(tabId) {
+            // Deactivate all
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+            
+            // Activate target
+            let activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            let targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+        }
+
+        // Format currency helper
+        const formatCurrency = (val) => {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+        };
+        
+        // Format integer helper
+        const formatNumber = (val) => {
+            return new Intl.NumberFormat('en-US').format(val);
+        };
+
+        // Initialize KPIs
+        document.getElementById('kpi-sales').innerText = formatCurrency(data.kpis.total_revenue);
+        document.getElementById('kpi-profit').innerText = formatCurrency(data.kpis.total_profit);
+        document.getElementById('kpi-margin').innerText = data.kpis.profit_margin.toFixed(2) + "%";
+        document.getElementById('kpi-orders').innerText = formatNumber(data.kpis.total_orders);
+
+        // Build Table rows
+        const tableBody = document.getElementById('menu-table-body');
+        data.menu_items.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.item_id}</td>
+                <td style="font-weight: 600;">${item.item_name}</td>
+                <td>${item.category_name}</td>
+                <td><span class="badge ${item.is_vegetarian === 'Yes' ? 'veg' : 'nonveg'}">${item.is_vegetarian}</span></td>
+                <td>${formatCurrency(item.base_price)}</td>
+                <td>${formatCurrency(item.base_cost)}</td>
+                <td>${formatNumber(item.total_quantity_sold)}</td>
+                <td>${formatCurrency(item.unit_contribution_margin)}</td>
+                <td style="font-weight: 600; color: ${item.total_profit >= 0 ? '#10b981' : '#f43f5e'};">${formatCurrency(item.total_profit)}</td>
+                <td><span class="badge ${item.menu_category.toLowerCase()}">${item.menu_category}</span></td>
+            `;
+            tableBody.appendChild(tr);
+        });
+        
+        // Branch Table
+        const branchBody = document.getElementById('branch-table-body');
+        data.branch_performance.forEach(b => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">${b.branch_name}</td>
+                <td>${b.city}</td>
+                <td>${b.region}</td>
+                <td>${formatCurrency(b.revenue)}</td>
+                <td style="font-weight: 600; color: #10b981;">${formatCurrency(b.profit)}</td>
+                <td>${formatNumber(b.orders)}</td>
+                <td>${formatNumber(b.qty_sold)}</td>
+            `;
+            branchBody.appendChild(tr);
+        });
+
+        // Filter Table Function
+        function filterTable() {
+            const query = document.getElementById('table-search').value.toLowerCase();
+            const categoryFilter = document.getElementById('table-filter-cat').value;
+            const rows = document.querySelectorAll('#menu-table-body tr');
+            
+            rows.forEach(row => {
+                const itemName = row.children[1].innerText.toLowerCase();
+                const bcgStatus = row.children[9].innerText.trim();
+                
+                const matchesSearch = itemName.includes(query);
+                const matchesCategory = categoryFilter === 'All' || bcgStatus === categoryFilter;
+                
+                if (matchesSearch && matchesCategory) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // ----------------------------------------------------
+        // CHARTS SETUP
+        // ----------------------------------------------------
+        
+        // 1. Monthly Trend Chart
+        const ctxMonthly = document.getElementById('chart-monthly-trend').getContext('2d');
+        new Chart(ctxMonthly, {
+            type: 'line',
+            data: {
+                labels: data.monthly_trend.map(d => d.year_month),
+                datasets: [
+                    {
+                        label: 'Net Sales',
+                        data: data.monthly_trend.map(d => d.net_sales),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Profit',
+                        data: data.monthly_trend.map(d => d.profit),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#94a3b8' } }
+                },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+
+        // 2. Branch Performance Chart
+        const ctxBranch = document.getElementById('chart-branch-performance').getContext('2d');
+        new Chart(ctxBranch, {
+            type: 'bar',
+            data: {
+                labels: data.branch_performance.map(b => b.branch_name),
+                datasets: [
+                    {
+                        label: 'Revenue',
+                        data: data.branch_performance.map(b => b.revenue),
+                        backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Profit',
+                        data: data.branch_performance.map(b => b.profit),
+                        backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                        borderColor: '#10b981',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#94a3b8' } }
+                },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+
+        // 3. Order Types Doughnut
+        const ctxOrderTypes = document.getElementById('chart-order-types').getContext('2d');
+        new Chart(ctxOrderTypes, {
+            type: 'doughnut',
+            data: {
+                labels: data.order_type_stats.map(d => d.order_type),
+                datasets: [{
+                    data: data.order_type_stats.map(d => d.revenue),
+                    backgroundColor: ['#8b5cf6', '#14b8a6', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 } } }
+                }
+            }
+        });
+
+        // 4. Payments Doughnut
+        const ctxPayments = document.getElementById('chart-payments').getContext('2d');
+        new Chart(ctxPayments, {
+            type: 'doughnut',
+            data: {
+                labels: data.payment_stats.map(d => d.payment_method),
+                datasets: [{
+                    data: data.payment_stats.map(d => d.revenue),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 5. Menu Categories Bar
+        const ctxMenuCat = document.getElementById('chart-menu-categories').getContext('2d');
+        new Chart(ctxMenuCat, {
+            type: 'bar',
+            data: {
+                labels: data.menu_category_performance.map(d => d.menu_category),
+                datasets: [{
+                    label: 'Net Sales',
+                    data: data.menu_category_performance.map(d => d.revenue),
+                    backgroundColor: '#8b5cf6',
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
+                }
+            }
+        });
+
+        // 6. BCG Scatter Plot Chart (Interactive)
+        const ctxBcg = document.getElementById('chart-bcg-scatter').getContext('2d');
+        const bcgPoints = data.menu_items.map(item => ({
+            x: item.total_quantity_sold,
+            y: item.unit_contribution_margin,
+            label: item.item_name,
+            category: item.menu_category
+        }));
+
+        // Group points by category for coloring
+        const scatterDatasets = ['Star', 'Plowhorse', 'Puzzle', 'Dog'].map(cat => {
+            const catColors = { 'Star': '#10b981', 'Plowhorse': '#3b82f6', 'Puzzle': '#f59e0b', 'Dog': '#f43f5e' };
+            return {
+                label: cat + 's',
+                data: bcgPoints.filter(p => p.category === cat),
+                backgroundColor: catColors[cat],
+                pointRadius: 8,
+                pointHoverRadius: 10,
+            };
+        });
+
+        new Chart(ctxBcg, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    ...scatterDatasets,
+                    // Horizontal benchmark line
+                    {
+                        label: 'Avg Margin',
+                        data: [
+                            { x: 0, y: data.benchmarks.profitability },
+                            { x: Math.max(...bcgPoints.map(p => p.x)) * 1.1, y: data.benchmarks.profitability }
+                        ],
+                        type: 'line',
+                        borderColor: 'rgba(255, 255, 255, 0.25)',
+                        borderWidth: 1.5,
+                        borderDash: [6, 6],
+                        pointRadius: 0,
+                        fill: false,
+                        showLine: true
+                    },
+                    // Vertical benchmark line
+                    {
+                        label: 'Avg Quantity',
+                        data: [
+                            { x: data.benchmarks.popularity, y: 0 },
+                            { x: data.benchmarks.popularity, y: Math.max(...bcgPoints.map(p => p.y)) * 1.1 }
+                        ],
+                        type: 'line',
+                        borderColor: 'rgba(255, 255, 255, 0.25)',
+                        borderWidth: 1.5,
+                        borderDash: [6, 6],
+                        pointRadius: 0,
+                        fill: false,
+                        showLine: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { 
+                            color: '#94a3b8',
+                            filter: function(item, chartData) {
+                                return item.text !== 'Avg Margin' && item.text !== 'Avg Quantity';
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const raw = context.raw;
+                                return raw.label ? `${raw.label}: Vol=${raw.x}, Margin=${formatCurrency(raw.y)}` : '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Popularity (Total Quantity Sold)', color: '#94a3b8' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Unit Contribution Margin (₹)', color: '#94a3b8' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+
+        // 7. BCG Profit Bar Chart
+        const ctxBcgProfit = document.getElementById('chart-bcg-profit').getContext('2d');
+        const sortedBcgStats = [...data.menu_category_performance].sort((a,b) => b.profit - a.profit);
+        new Chart(ctxBcgProfit, {
+            type: 'bar',
+            data: {
+                labels: sortedBcgStats.map(d => d.menu_category + 's'),
+                datasets: [{
+                    data: sortedBcgStats.map(d => d.profit),
+                    backgroundColor: sortedBcgStats.map(d => {
+                        const catColors = { 'Star': '#10b981', 'Plowhorse': '#3b82f6', 'Puzzle': '#f59e0b', 'Dog': '#f43f5e' };
+                        return catColors[d.menu_category];
+                    }),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+
+        // 8. Customer Demographic Loyalty Polar Area Chart
+        const ctxCust = document.getElementById('chart-customers').getContext('2d');
+        new Chart(ctxCust, {
+            type: 'polarArea',
+            data: {
+                labels: data.customer_stats.map(d => d.customer_type),
+                datasets: [{
+                    label: 'Avg Loyalty Points',
+                    data: data.customer_stats.map(d => d.avg_loyalty),
+                    backgroundColor: [
+                        'rgba(139, 92, 246, 0.65)',
+                        'rgba(20, 184, 166, 0.65)',
+                        'rgba(59, 130, 246, 0.65)',
+                        'rgba(245, 158, 11, 0.65)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#94a3b8' } }
+                },
+                scales: {
+                    r: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        angleLines: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { display: false }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

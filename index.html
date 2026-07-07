@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Analytics Platform</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Dark Theme Colors */
+            --bg-color: #0f172a;
+            --sidebar-bg: rgba(30, 41, 59, 0.7);
+            --sidebar-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --item-hover: rgba(59, 130, 246, 0.1);
+            --active-bg: rgba(59, 130, 246, 0.2);
+            --active-border: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+        }
+
+        /* Sidebar Styling (Glassmorphism) */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            z-index: 10;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+        }
+
+        .brand {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        .brand i {
+            font-size: 24px;
+            color: var(--accent-color);
+        }
+
+        .brand h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu {
+            padding: 20px 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        .nav-menu::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .nav-section {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            padding: 0 24px;
+            margin-bottom: 12px;
+            margin-top: 16px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            gap: 14px;
+        }
+
+        .nav-item i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--item-hover);
+            color: var(--text-main);
+        }
+        
+        .nav-item:hover i {
+            transform: scale(1.1);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: var(--active-bg);
+            color: var(--text-main);
+            border-left: 3px solid var(--active-border);
+        }
+        
+        .nav-item.active i {
+            color: var(--accent-color);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .top-bar {
+            height: 64px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--sidebar-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 5;
+        }
+
+        .current-view-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .iframe-container {
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - 64px);
+            background: #000;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--bg-color);
+        }
+
+        /* Loading Spinner */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+            z-index: -1;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand">
+            <i class="fa-solid fa-layer-group"></i>
+            <h1>Data Platform</h1>
+        </div>
+        
+        <div class="nav-menu">
+            <div class="nav-section">Overview</div>
+            <a class="nav-item active" data-src="CommandCenter/command_center.html" data-title="Command Center">
+                <i class="fa-solid fa-house"></i>
+                <span>Command Center</span>
+            </a>
+            <a class="nav-item" data-src="InteractiveDashboard/unified_dashboard.html" data-title="Unified Dashboard">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Unified Dashboard</span>
+            </a>
+
+            <div class="nav-section">Deep Dives</div>
+            <a class="nav-item" data-src="EDA/eda_dashboard.html" data-title="Exploratory Data Analysis">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <span>EDA Report</span>
+            </a>
+            <a class="nav-item" data-src="FraudDetection/fraud_dashboard.html" data-title="Fraud Detection">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Fraud Detection</span>
+            </a>
+            <a class="nav-item" data-src="SalesForecasting/forecasting_dashboard.html" data-title="Sales Forecasting">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                <span>Sales Forecasting</span>
+            </a>
+
+            <div class="nav-section">Customer Analytics</div>
+            <a class="nav-item" data-src="CohortAnalysis/cohort_dashboard.html" data-title="Cohort Analysis">
+                <i class="fa-solid fa-users-viewfinder"></i>
+                <span>Cohort Analysis</span>
+            </a>
+            <a class="nav-item" data-src="RMF/rfm_dashboard.html" data-title="RFM Analysis">
+                <i class="fa-solid fa-user-tag"></i>
+                <span>RFM Analysis</span>
+            </a>
+
+            <div class="nav-section">System</div>
+            <a class="nav-item" data-src="Performance/performance_dashboard.html" data-title="Performance Metrics">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span>Performance Metrics</span>
+            </a>
+            <a class="nav-item" data-src="ETL/dashboard.html" data-title="ETL Status">
+                <i class="fa-solid fa-server"></i>
+                <span>ETL Status</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="current-view-title" id="view-title">
+                <i class="fa-solid fa-house"></i> Command Center
+            </div>
+            <div style="font-size: 14px; color: var(--text-muted);">
+                <i class="fa-solid fa-circle-dot" style="color: #10b981; font-size: 10px; margin-right: 6px;"></i> System Online
+            </div>
+        </div>
+        <div class="iframe-container">
+            <div class="loader" id="loader"></div>
+            <!-- Default load -->
+            <iframe id="main-frame" src="CommandCenter/command_center.html" title="Dashboard View" onload="hideLoader()"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const navItems = document.querySelectorAll('.nav-item');
+        const iframe = document.getElementById('main-frame');
+        const viewTitle = document.getElementById('view-title');
+        const loader = document.getElementById('loader');
+
+        function showLoader() {
+            loader.style.display = 'block';
+            iframe.style.opacity = '0';
+        }
+
+        function hideLoader() {
+            loader.style.display = 'none';
+            iframe.style.opacity = '1';
+            iframe.style.transition = 'opacity 0.3s ease';
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all
+                navItems.forEach(nav => nav.classList.remove('active'));
+                
+                // Add active to clicked
+                this.classList.add('active');
+                
+                // Update title
+                const title = this.getAttribute('data-title');
+                const iconClass = this.querySelector('i').className;
+                viewTitle.innerHTML = `<i class="${iconClass}"></i> ${title}`;
+                
+                // Change iframe source
+                const src = this.getAttribute('data-src');
+                showLoader();
+                iframe.src = src;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+item_id,item_name,category_id,base_price,base_cost,is_vegetarian,category_name,category_description,total_quantity_sold,unit_contribution_margin,menu_category
+1,Paneer Tikka,1,280,90,Yes,Starters,Appetizers and soups,2764,201.28715267727927,Dog
+2,Chicken Wings,1,320,110,No,Starters,Appetizers and soups,3934,221.15574478901885,Dog
+3,Veg Spring Rolls,1,220,65,Yes,Starters,Appetizers and soups,4934,163.04477503040127,Plowhorse
+4,Fish Tacos,1,350,130,No,Starters,Appetizers and soups,2110,232.1374502369668,Dog
+5,Soup of the Day,1,150,45,Yes,Starters,Appetizers and soups,2850,110.3143298245614,Dog
+6,Butter Chicken,2,420,140,No,Main Course,"Rice, pasta, curries, grills",7479,297.20553549939825,Plowhorse
+7,Dal Makhani,2,320,80,Yes,Main Course,"Rice, pasta, curries, grills",5751,252.7986106764041,Plowhorse
+8,Grilled Salmon,2,650,220,No,Main Course,"Rice, pasta, curries, grills",2901,451.3382488796967,Puzzle
+9,Pasta Arrabiata,2,380,95,Yes,Main Course,"Rice, pasta, curries, grills",3913,299.34634551495014,Dog
+10,Lamb Biryani,2,520,180,No,Main Course,"Rice, pasta, curries, grills",4724,359.75674428450475,Star
+11,Veg Biryani,2,380,100,Yes,Main Course,"Rice, pasta, curries, grills",6314,293.85534368070955,Plowhorse
+12,Pizza Margherita,2,340,85,Yes,Main Course,"Rice, pasta, curries, grills",7982,267.6902042094713,Plowhorse
+13,Chicken Tikka Masala,2,440,150,No,Main Course,"Rice, pasta, curries, grills",6490,308.1268659476117,Star
+14,Chocolate Lava Cake,3,280,70,Yes,Desserts,"Sweets, ice creams, pastries",3827,220.206817350405,Dog
+15,Tiramisu,3,300,90,Yes,Desserts,"Sweets, ice creams, pastries",3103,223.34092813406377,Dog
+16,Gulab Jamun,3,160,40,Yes,Desserts,"Sweets, ice creams, pastries",4926,125.9622472594397,Plowhorse
+17,Ice Cream Sundae,3,220,55,Yes,Desserts,"Sweets, ice creams, pastries",4010,173.40676309226933,Dog
+18,Fresh Lime Soda,4,80,15,Yes,Beverages,"Juices, mocktails, hot drinks",5350,68.07049906542056,Plowhorse
+19,Mango Lassi,4,120,30,Yes,Beverages,"Juices, mocktails, hot drinks",6714,94.24178284182308,Plowhorse
+20,Cold Coffee,4,150,35,Yes,Beverages,"Juices, mocktails, hot drinks",4968,120.57927938808372,Plowhorse
+21,Masala Chai,4,60,12,Yes,Beverages,"Juices, mocktails, hot drinks",7437,50.46567433104747,Plowhorse
+22,Orange Juice,4,100,20,Yes,Beverages,"Juices, mocktails, hot drinks",3914,83.95500510986204,Dog
+23,Family Feast,5,1200,420,No,Combos,Value combo meals,4680,821.9584807692306,Star
+24,Veg Combo Meal,5,480,160,Yes,Combos,Value combo meals,7404,337.30482712047547,Star
+25,Couple Dinner,5,900,300,No,Combos,Value combo meals,5867,628.559277313789,Star
+26,Chef's Special Curry,6,580,200,No,Specials,Chef specials and seasonal items,3120,402.1707916666666,Puzzle
+27,Truffle Mushroom Risotto,6,620,190,Yes,Specials,Chef specials and seasonal items,3884,457.19633110195673,Puzzle
+28,Seared Duck Breast,6,750,270,No,Specials,Chef specials and seasonal items,1900,507.8585,Puzzle
+29,Quinoa Salad,6,390,110,Yes,Specials,Chef specials and seasonal items,2894,294.70099170697995,Dog
+30,Lobster Thermidor,6,1800,700,No,Specials,Chef specials and seasonal items,1007,1167.6545283018866,Puzzle

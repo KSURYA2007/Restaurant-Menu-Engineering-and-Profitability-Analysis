@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Exploratory Data Analysis & Statistical Dashboard</title>
+    
+    <!-- Outfit & Inter Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-base: #0b0f19;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-card-hover: rgba(17, 24, 39, 0.9);
+            --border-card: rgba(255, 255, 255, 0.06);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            
+            --accent-blue: #3b82f6;
+            --accent-teal: #0d9488;
+            --accent-rose: #f43f5e;
+            --accent-yellow: #eab308;
+            --accent-purple: #8b5cf6;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 40%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+        
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-panel:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(17, 24, 39, 0.5);
+            border-bottom: 1px solid var(--border-card);
+            margin: -24px -24px 0 -24px;
+            backdrop-filter: blur(8px);
+        }
+        
+        header h1 {
+            font-size: 26px;
+            background: linear-gradient(to right, #fff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+            padding: 10px 22px;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .tab-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
+        }
+        
+        .dashboard-view {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .dashboard-view.active {
+            display: flex;
+        }
+        
+        /* Stats Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+        
+        th, td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        
+        /* KPI Cards */
+        .kpi-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-blue);
+        }
+        
+        .kpi-card.rose::before { background: var(--accent-rose); }
+        .kpi-card.teal::before { background: var(--accent-teal); }
+        .kpi-card.yellow::before { background: var(--accent-yellow); }
+        
+        .kpi-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        /* Heatmap Grid style */
+        .heatmap-table {
+            margin-top: 15px;
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 2px;
+        }
+        
+        .heatmap-cell {
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 12px;
+            border-radius: 4px;
+            color: #0b0f19;
+        }
+        
+        .heatmap-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-align: right;
+            padding-right: 8px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        
+        .badge.outlier {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Exploratory Data Analysis</h1>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Comprehensive Descriptive Statistics & Anomaly Analysis (₹ Currency Model)</p>
+        </div>
+        <div style="font-size: 14px; text-align: right; color: var(--text-secondary);">
+            <div>Outlier Method: <span style="color: var(--accent-rose); font-weight: 600;">IQR (1.5x)</span></div>
+            <div style="font-size: 11px; margin-top: 4px;">Data Engine: Pandas/NumPy</div>
+        </div>
+    </header>
+
+    <div class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('stats')">Descriptive Statistics</button>
+        <button class="tab-btn" onclick="switchTab('outliers')">Outliers & Anomalies</button>
+        <button class="tab-btn" onclick="switchTab('correlations')">Correlations & Segments</button>
+    </div>
+
+    <!-- VIEW 1: DESCRIPTIVE STATS -->
+    <div id="view-stats" class="dashboard-view active">
+        <div class="grid-2">
+            <!-- Fact table stats -->
+            <div class="glass-panel">
+                <h3>Sales Transactions Descriptive Statistics</h3>
+                <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 10px;">Summary statistics for all transaction measures inside fact_sales</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Metric Name</th>
+                                <th>Count</th>
+                                <th>Mean</th>
+                                <th>Std Dev</th>
+                                <th>Min</th>
+                                <th>25%</th>
+                                <th>Median</th>
+                                <th>75%</th>
+                                <th>Max</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fact-stats-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Customer table stats -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div class="glass-panel">
+                    <h3>Customer Demographics Summary</h3>
+                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 10px;">Summary statistics for customer attributes inside dim_customer</p>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric Name</th>
+                                    <th>Count</th>
+                                    <th>Mean</th>
+                                    <th>Std Dev</th>
+                                    <th>Min</th>
+                                    <th>25%</th>
+                                    <th>Median</th>
+                                    <th>75%</th>
+                                    <th>Max</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cust-stats-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Quick EDA insights -->
+                <div class="glass-panel">
+                    <h3 style="margin-bottom: 8px;">Key Statistical Insights</h3>
+                    <ul style="margin-left: 18px; font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; line-height: 1.4;">
+                        <li><strong>Sales Distribution</strong>: Transaction net sales average is ₹717.38 with a median of ₹512.43, showing a right-skewed distribution.</li>
+                        <li><strong>Ratings Profile</strong>: Customer satisfaction scores average 3.01 with standard deviation of 1.41, representing a uniform flat distribution (equal distribution of ratings 1 to 5).</li>
+                        <li><strong>Customer Age</strong>: Customer age ranges from 18 to 69 with a mean of 43.68, showing balanced adult demographics.</li>
+                        <li><strong>Loyalty Engagement</strong>: Loyalty points average 2,525 points, showing a highly active returning base.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Distribution plots preview -->
+        <div class="grid-2">
+            <div class="glass-panel">
+                <h3>Net Sales Value Distribution</h3>
+                <div class="chart-container" style="height: 240px;">
+                    <canvas id="chart-sales-dist"></canvas>
+                </div>
+            </div>
+            <div class="glass-panel">
+                <h3>Customer Age Distribution</h3>
+                <div class="chart-container" style="height: 240px;">
+                    <canvas id="chart-age-dist"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: OUTLIERS & ANOMALIES -->
+    <div id="view-outliers" class="dashboard-view">
+        <!-- Outlier KPIs -->
+        <div class="grid-3">
+            <div class="glass-panel kpi-card rose">
+                <div class="kpi-title">Sales Outliers (₹)</div>
+                <div class="kpi-value" id="kpi-outlier-sales">0</div>
+                <p style="font-size: 11px; color: var(--text-secondary);" id="kpi-bounds-sales">Bounds: ₹0 to ₹0</p>
+            </div>
+            <div class="glass-panel kpi-card yellow">
+                <div class="kpi-title">Order Quantity Outliers</div>
+                <div class="kpi-value" id="kpi-outlier-qty">0</div>
+                <p style="font-size: 11px; color: var(--text-secondary);" id="kpi-bounds-qty">Bounds: 0 to 0</p>
+            </div>
+            <div class="glass-panel kpi-card teal">
+                <div class="kpi-title">Loyalty Points Outliers</div>
+                <div class="kpi-value" id="kpi-outlier-loyalty">0</div>
+                <p style="font-size: 11px; color: var(--text-secondary);" id="kpi-bounds-loyalty">Bounds: 0 to 0</p>
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <!-- Boxplot representation of outliers -->
+            <div class="glass-panel">
+                <h3>Transactional Measures Range & Outlier Spread</h3>
+                <div class="chart-container">
+                    <canvas id="chart-outliers-boxplot"></canvas>
+                </div>
+            </div>
+            
+            <!-- Outliers List -->
+            <div class="glass-panel">
+                <h3>Top Transactional Outlier Samples</h3>
+                <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 10px;">Top high-value transactions flagged as outliers by IQR</p>
+                <div class="table-wrapper" style="max-height: 250px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Item Name</th>
+                                <th>Quantity</th>
+                                <th>Net Sales</th>
+                                <th>Profit</th>
+                                <th>Rating</th>
+                                <th>Flag</th>
+                            </tr>
+                        </thead>
+                        <tbody id="outliers-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: CORRELATIONS & SEGMENTS -->
+    <div id="view-correlations" class="dashboard-view">
+        <div class="grid-2">
+            <!-- Heatmap -->
+            <div class="glass-panel">
+                <h3>Correlation Matrix of Numerical Metrics</h3>
+                <p style="color: var(--text-secondary); font-size: 12px;">Pearson correlation coefficients. Values close to 1/-1 denote strong positive/negative correlations.</p>
+                <table class="heatmap-table" id="heatmap-table">
+                    <!-- Dynamic rendering -->
+                </table>
+            </div>
+            
+            <!-- Segment sales breakdown -->
+            <div class="glass-panel">
+                <h3>Customer Segment Performance (Net Sales)</h3>
+                <div class="chart-container">
+                    <canvas id="chart-segment-performance"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid-3">
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 12px;">Gender Segments</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Gender</th>
+                                <th>Net Sales</th>
+                                <th>Profit</th>
+                                <th>Avg Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seg-gender-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 12px;">Payment Segments</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Net Sales</th>
+                                <th>Profit</th>
+                                <th>Avg Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seg-payment-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 12px;">Order Type Segments</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Net Sales</th>
+                                <th>Profit</th>
+                                <th>Avg Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seg-ordertype-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const edaData = {
+    "fact_stats": [
+        {
+            "metric": "quantity",
+            "count": 52541.0,
+            "mean": 2.61,
+            "std": 2.32,
+            "min": 1.0,
+            "25%": 1.0,
+            "50%": 2.0,
+            "75%": 4.0,
+            "max": 50.0
+        },
+        {
+            "metric": "unit_price",
+            "count": 52541.0,
+            "mean": 409.6,
+            "std": 301.53,
+            "min": 54.17,
+            "25%": 178.37,
+            "50%": 364.0,
+            "75%": 498.05,
+            "max": 2172.24
+        },
+        {
+            "metric": "unit_cost",
+            "count": 52541.0,
+            "mean": 120.34,
+            "std": 104.98,
+            "min": 10.8,
+            "25%": 44.42,
+            "50%": 92.95,
+            "75%": 156.54,
+            "max": 768.84
+        },
+        {
+            "metric": "discount_pct",
+            "count": 52541.0,
+            "mean": 2.61,
+            "std": 6.97,
+            "min": 0.0,
+            "25%": 0.0,
+            "50%": 0.0,
+            "75%": 0.0,
+            "max": 90.0
+        },
+        {
+            "metric": "gross_sales",
+            "count": 52541.0,
+            "mean": 1066.99,
+            "std": 1380.05,
+            "min": 54.17,
+            "25%": 369.78,
+            "50%": 749.06,
+            "75%": 1373.08,
+            "max": 71875.1
+        },
+        {
+            "metric": "discount_amt",
+            "count": 52541.0,
+            "mean": 28.72,
+            "std": 130.72,
+            "min": 0.0,
+            "25%": 0.0,
+            "50%": 0.0,
+            "75%": 0.0,
+            "max": 8201.07
+        },
+        {
+            "metric": "net_sales",
+            "count": 52541.0,
+            "mean": 1038.27,
+            "std": 1341.03,
+            "min": 11.52,
+            "25%": 360.24,
+            "50%": 729.72,
+            "75%": 1337.91,
+            "max": 71875.1
+        },
+        {
+            "metric": "cogs",
+            "count": 52541.0,
+            "mean": 313.28,
+            "std": 444.86,
+            "min": 10.8,
+            "25%": 90.86,
+            "50%": 201.18,
+            "75%": 395.25,
+            "max": 26973.54
+        },
+        {
+            "metric": "profit",
+            "count": 52541.0,
+            "mean": 724.98,
+            "std": 908.64,
+            "min": -976.32,
+            "25%": 268.31,
+            "50%": 530.72,
+            "75%": 943.0,
+            "max": 45286.56
+        },
+        {
+            "metric": "profit_margin",
+            "count": 52541.0,
+            "mean": 0.72,
+            "std": 0.09,
+            "min": -2.32,
+            "25%": 0.68,
+            "50%": 0.72,
+            "75%": 0.77,
+            "max": 0.86
+        },
+        {
+            "metric": "customer_rating",
+            "count": 52541.0,
+            "mean": 4.09,
+            "std": 0.99,
+            "min": 1.0,
+            "25%": 4.0,
+            "50%": 4.0,
+            "75%": 5.0,
+            "max": 5.0
+        }
+    ],
+    "cust_stats": [
+        {
+            "metric": "age",
+            "count": 3000.0,
+            "mean": 43.58,
+            "std": 14.91,
+            "min": 18.0,
+            "25%": 31.0,
+            "50%": 43.0,
+            "75%": 57.0,
+            "max": 69.0
+        },
+        {
+            "metric": "loyalty_points",
+            "count": 3000.0,
+            "mean": 2467.86,
+            "std": 1440.38,
+            "min": 0.0,
+            "25%": 1236.0,
+            "50%": 2440.5,
+            "75%": 3717.0,
+            "max": 4999.0
+        }
+    ],
+    "outliers": {
+        "qty_count": 192,
+        "qty_pct": 0.3654289031423079,
+        "qty_lower": -3.5,
+        "qty_upper": 8.5,
+        "sales_count": 2539,
+        "sales_pct": 4.832416588949582,
+        "sales_lower": -1106.265,
+        "sales_upper": 2804.415,
+        "profit_count": 2460,
+        "profit_pct": 4.682057821510821,
+        "profit_lower": -743.7250000000001,
+        "profit_upper": 1955.035,
+        "loyalty_count": 0,
+        "loyalty_pct": 0.0,
+        "loyalty_lower": -2485.5,
+        "loyalty_upper": 7438.5,
+        "total_fact_outliers": 2655,
+        "total_fact_outliers_pct": 5.053196551264726
+    },
+    "correlations": {
+        "index": [
+            "quantity",
+            "unit_price",
+            "unit_cost",
+            "discount_pct",
+            "net_sales",
+            "cogs",
+            "profit",
+            "customer_rating"
+        ],
+        "columns": [
+            "quantity",
+            "unit_price",
+            "unit_cost",
+            "discount_pct",
+            "net_sales",
+            "cogs",
+            "profit",
+            "customer_rating"
+        ],
+        "data": [
+            [
+                1.0,
+                -0.0032,
+                -0.0035,
+                0.0092,
+                0.6638,
+                0.5974,
+                0.6872,
+                -0.0035
+            ],
+            [
+                -0.0032,
+                1.0,
+                0.9828,
+                0.0008,
+                0.5661,
+                0.6013,
+                0.5411,
+                -0.0033
+            ],
+            [
+                -0.0035,
+                0.9828,
+                1.0,
+                0.0017,
+                0.5567,
+                0.6125,
+                0.5218,
+                -0.0039
+            ],
+            [
+                0.0092,
+                0.0008,
+                0.0017,
+                1.0,
+                -0.0459,
+                0.01,
+                -0.0727,
+                -0.0035
+            ],
+            [
+                0.6638,
+                0.5661,
+                0.5567,
+                -0.0459,
+                1.0,
+                0.9811,
+                0.9955,
+                -0.0055
+            ],
+            [
+                0.5974,
+                0.6013,
+                0.6125,
+                0.01,
+                0.9811,
+                1.0,
+                0.9585,
+                -0.0073
+            ],
+            [
+                0.6872,
+                0.5411,
+                0.5218,
+                -0.0727,
+                0.9955,
+                0.9585,
+                1.0,
+                -0.0046
+            ],
+            [
+                -0.0035,
+                -0.0033,
+                -0.0039,
+                -0.0035,
+                -0.0055,
+                -0.0073,
+                -0.0046,
+                1.0
+            ]
+        ]
+    },
+    "segments": {
+        "gender": [
+            {
+                "gender": "Female",
+                "total_sales": 26222724.21,
+                "total_profit": 18323354.22,
+                "avg_rating": 4.09,
+                "orders": 7182
+            },
+            {
+                "gender": "Male",
+                "total_sales": 26090427.66,
+                "total_profit": 18202589.42,
+                "avg_rating": 4.09,
+                "orders": 7200
+            },
+            {
+                "gender": "Other",
+                "total_sales": 2238400.08,
+                "total_profit": 1565321.56,
+                "avg_rating": 4.08,
+                "orders": 618
+            }
+        ],
+        "customer_type": [
+            {
+                "customer_type": "New",
+                "total_sales": 12994413.67,
+                "total_profit": 9063414.75,
+                "avg_rating": 4.1,
+                "orders": 3590
+            },
+            {
+                "customer_type": "Occasional",
+                "total_sales": 17327116.74,
+                "total_profit": 12109132.73,
+                "avg_rating": 4.08,
+                "orders": 4777
+            },
+            {
+                "customer_type": "Regular",
+                "total_sales": 19586305.47,
+                "total_profit": 13677428.37,
+                "avg_rating": 4.09,
+                "orders": 5354
+            },
+            {
+                "customer_type": "VIP",
+                "total_sales": 4643716.07,
+                "total_profit": 3241289.35,
+                "avg_rating": 4.1,
+                "orders": 1279
+            }
+        ],
+        "order_type": [
+            {
+                "order_type": "Delivery",
+                "total_sales": 18534999.58,
+                "total_profit": 12950380.13,
+                "avg_rating": 4.09,
+                "orders": 10552
+            },
+            {
+                "order_type": "Dine-In",
+                "total_sales": 18034158.43,
+                "total_profit": 12585811.06,
+                "avg_rating": 4.09,
+                "orders": 10481
+            },
+            {
+                "order_type": "Takeaway",
+                "total_sales": 17982393.94,
+                "total_profit": 12555074.01,
+                "avg_rating": 4.1,
+                "orders": 10433
+            }
+        ],
+        "payment_method": [
+            {
+                "payment_method": "Card",
+                "total_sales": 10884774.46,
+                "total_profit": 7594416.87,
+                "avg_rating": 4.09,
+                "orders": 7535
+            },
+            {
+                "payment_method": "Cash",
+                "total_sales": 10623752.62,
+                "total_profit": 7427131.12,
+                "avg_rating": 4.07,
+                "orders": 7495
+            },
+            {
+                "payment_method": "Online",
+                "total_sales": 11185219.68,
+                "total_profit": 7812563.26,
+                "avg_rating": 4.09,
+                "orders": 7743
+            },
+            {
+                "payment_method": "UPI",
+                "total_sales": 11026581.48,
+                "total_profit": 7694055.16,
+                "avg_rating": 4.1,
+                "orders": 7651
+            },
+            {
+                "payment_method": "Wallet",
+                "total_sales": 10831223.71,
+                "total_profit": 7563098.79,
+                "avg_rating": 4.1,
+                "orders": 7622
+            }
+        ],
+        "branch": [
+            {
+                "branch_name": "Airport",
+                "total_sales": 11372300.62,
+                "total_profit": 8042737.22,
+                "avg_rating": 4.09,
+                "orders": 2990
+            },
+            {
+                "branch_name": "Beach",
+                "total_sales": 11787398.62,
+                "total_profit": 8499134.71,
+                "avg_rating": 4.1,
+                "orders": 3019
+            },
+            {
+                "branch_name": "Downtown",
+                "total_sales": 10886187.92,
+                "total_profit": 7545858.04,
+                "avg_rating": 4.08,
+                "orders": 3008
+            },
+            {
+                "branch_name": "Mall",
+                "total_sales": 10965792.27,
+                "total_profit": 7692750.26,
+                "avg_rating": 4.1,
+                "orders": 2992
+            },
+            {
+                "branch_name": "Suburb",
+                "total_sales": 9539872.52,
+                "total_profit": 6310784.97,
+                "avg_rating": 4.09,
+                "orders": 2991
+            }
+        ],
+        "menu_category": [
+            {
+                "category_name": "Beverages",
+                "total_sales": 2922810.32,
+                "total_profit": 2299867.52,
+                "avg_rating": 4.1,
+                "qty_sold": 28383
+            },
+            {
+                "category_name": "Combos",
+                "total_sales": 14950446.16,
+                "total_profit": 10031927.93,
+                "avg_rating": 4.09,
+                "qty_sold": 17951
+            },
+            {
+                "category_name": "Desserts",
+                "total_sales": 3816170.24,
+                "total_profit": 2851609.56,
+                "avg_rating": 4.09,
+                "qty_sold": 15866
+            },
+            {
+                "category_name": "Main Course",
+                "total_sales": 19499070.56,
+                "total_profit": 13848659.65,
+                "avg_rating": 4.1,
+                "qty_sold": 45554
+            },
+            {
+                "category_name": "Specials",
+                "total_sales": 8921724.2,
+                "total_profit": 6024147.35,
+                "avg_rating": 4.07,
+                "qty_sold": 12805
+            },
+            {
+                "category_name": "Starters",
+                "total_sales": 4441330.47,
+                "total_profit": 3035053.19,
+                "avg_rating": 4.08,
+                "qty_sold": 16592
+            }
+        ]
+    },
+    "outlier_samples": [
+        {
+            "order_id": 5498,
+            "customer_id": 2001,
+            "item_id": 30,
+            "location_id": 2,
+            "order_date": "2023-10-02",
+            "order_year": 2023,
+            "order_month": 10,
+            "order_quarter": 4,
+            "order_dayofweek": 0,
+            "quantity": 38,
+            "unit_price": 1891.45,
+            "unit_cost": 709.83,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 71875.1,
+            "net_sales": 71875.1,
+            "cogs": 26973.54,
+            "profit": 44901.56,
+            "profit_margin": 0.62,
+            "payment_method": "UPI",
+            "order_type": "Takeaway",
+            "customer_rating": 1,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Lobster Thermidor"
+        },
+        {
+            "order_id": 10663,
+            "customer_id": 2722,
+            "item_id": 23,
+            "location_id": 5,
+            "order_date": "2024-06-04",
+            "order_year": 2024,
+            "order_month": 6,
+            "order_quarter": 2,
+            "order_dayofweek": 1,
+            "quantity": 48,
+            "unit_price": 1347.62,
+            "unit_cost": 404.15,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 64685.76,
+            "net_sales": 64685.76,
+            "cogs": 19399.2,
+            "profit": 45286.56,
+            "profit_margin": 0.7,
+            "payment_method": "UPI",
+            "order_type": "Dine-In",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Family Feast"
+        },
+        {
+            "order_id": 1951,
+            "customer_id": 241,
+            "item_id": 23,
+            "location_id": 2,
+            "order_date": "2022-06-21",
+            "order_year": 2022,
+            "order_month": 6,
+            "order_quarter": 2,
+            "order_dayofweek": 1,
+            "quantity": 42,
+            "unit_price": 1352.53,
+            "unit_cost": 421.67,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 56806.26,
+            "net_sales": 56806.26,
+            "cogs": 17710.14,
+            "profit": 39096.12,
+            "profit_margin": 0.69,
+            "payment_method": "Wallet",
+            "order_type": "Dine-In",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Family Feast"
+        },
+        {
+            "order_id": 10879,
+            "customer_id": 1377,
+            "item_id": 25,
+            "location_id": 1,
+            "order_date": "2023-06-13",
+            "order_year": 2023,
+            "order_month": 6,
+            "order_quarter": 2,
+            "order_dayofweek": 1,
+            "quantity": 47,
+            "unit_price": 967.35,
+            "unit_cost": 295.73,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 45465.45,
+            "net_sales": 45465.45,
+            "cogs": 13899.31,
+            "profit": 31566.14,
+            "profit_margin": 0.69,
+            "payment_method": "Card",
+            "order_type": "Delivery",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Couple Dinner"
+        },
+        {
+            "order_id": 4755,
+            "customer_id": 2937,
+            "item_id": 23,
+            "location_id": 5,
+            "order_date": "2022-06-26",
+            "order_year": 2022,
+            "order_month": 6,
+            "order_quarter": 2,
+            "order_dayofweek": 6,
+            "quantity": 36,
+            "unit_price": 1323.86,
+            "unit_cost": 400.85,
+            "discount_pct": 5,
+            "discount_amt": 2382.95,
+            "gross_sales": 47658.96,
+            "net_sales": 45276.01,
+            "cogs": 14430.6,
+            "profit": 30845.41,
+            "profit_margin": 0.68,
+            "payment_method": "Card",
+            "order_type": "Dine-In",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Family Feast"
+        },
+        {
+            "order_id": 13383,
+            "customer_id": 2269,
+            "item_id": 25,
+            "location_id": 3,
+            "order_date": "2023-02-21",
+            "order_year": 2023,
+            "order_month": 2,
+            "order_quarter": 1,
+            "order_dayofweek": 1,
+            "quantity": 46,
+            "unit_price": 936.07,
+            "unit_cost": 318.61,
+            "discount_pct": 15,
+            "discount_amt": 6458.88,
+            "gross_sales": 43059.22,
+            "net_sales": 36600.34,
+            "cogs": 14656.06,
+            "profit": 21944.28,
+            "profit_margin": 0.6,
+            "payment_method": "UPI",
+            "order_type": "Dine-In",
+            "customer_rating": 3,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Couple Dinner"
+        },
+        {
+            "order_id": 10724,
+            "customer_id": 992,
+            "item_id": 25,
+            "location_id": 1,
+            "order_date": "2022-02-03",
+            "order_year": 2022,
+            "order_month": 2,
+            "order_quarter": 1,
+            "order_dayofweek": 3,
+            "quantity": 45,
+            "unit_price": 911.23,
+            "unit_cost": 280.76,
+            "discount_pct": 20,
+            "discount_amt": 8201.07,
+            "gross_sales": 41005.35,
+            "net_sales": 32804.28,
+            "cogs": 12634.2,
+            "profit": 20170.08,
+            "profit_margin": 0.61,
+            "payment_method": "Card",
+            "order_type": "Dine-In",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Couple Dinner"
+        },
+        {
+            "order_id": 1118,
+            "customer_id": 2858,
+            "item_id": 26,
+            "location_id": 5,
+            "order_date": "2023-09-23",
+            "order_year": 2023,
+            "order_month": 9,
+            "order_quarter": 3,
+            "order_dayofweek": 5,
+            "quantity": 50,
+            "unit_price": 674.52,
+            "unit_cost": 203.04,
+            "discount_pct": 5,
+            "discount_amt": 1686.3,
+            "gross_sales": 33726.0,
+            "net_sales": 32039.7,
+            "cogs": 10152.0,
+            "profit": 21887.7,
+            "profit_margin": 0.68,
+            "payment_method": "Cash",
+            "order_type": "Takeaway",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Chef's Special Curry"
+        },
+        {
+            "order_id": 1833,
+            "customer_id": 1066,
+            "item_id": 23,
+            "location_id": 4,
+            "order_date": "2023-07-26",
+            "order_year": 2023,
+            "order_month": 7,
+            "order_quarter": 3,
+            "order_dayofweek": 2,
+            "quantity": 31,
+            "unit_price": 1164.11,
+            "unit_cost": 451.66,
+            "discount_pct": 15,
+            "discount_amt": 5413.11,
+            "gross_sales": 36087.41,
+            "net_sales": 30674.3,
+            "cogs": 14001.46,
+            "profit": 16672.84,
+            "profit_margin": 0.54,
+            "payment_method": "Card",
+            "order_type": "Dine-In",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Family Feast"
+        },
+        {
+            "order_id": 5365,
+            "customer_id": 1286,
+            "item_id": 27,
+            "location_id": 5,
+            "order_date": "2024-03-11",
+            "order_year": 2024,
+            "order_month": 3,
+            "order_quarter": 1,
+            "order_dayofweek": 0,
+            "quantity": 44,
+            "unit_price": 690.9,
+            "unit_cost": 177.54,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 30399.6,
+            "net_sales": 30399.6,
+            "cogs": 7811.76,
+            "profit": 22587.84,
+            "profit_margin": 0.74,
+            "payment_method": "Online",
+            "order_type": "Dine-In",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Truffle Mushroom Risotto"
+        },
+        {
+            "order_id": 3861,
+            "customer_id": 2640,
+            "item_id": 23,
+            "location_id": 2,
+            "order_date": "2024-02-09",
+            "order_year": 2024,
+            "order_month": 2,
+            "order_quarter": 1,
+            "order_dayofweek": 4,
+            "quantity": 22,
+            "unit_price": 1310.18,
+            "unit_cost": 427.46,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 28823.96,
+            "net_sales": 28823.96,
+            "cogs": 9404.12,
+            "profit": 19419.84,
+            "profit_margin": 0.67,
+            "payment_method": "Online",
+            "order_type": "Delivery",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Family Feast"
+        },
+        {
+            "order_id": 9709,
+            "customer_id": 2057,
+            "item_id": 27,
+            "location_id": 4,
+            "order_date": "2024-02-22",
+            "order_year": 2024,
+            "order_month": 2,
+            "order_quarter": 1,
+            "order_dayofweek": 3,
+            "quantity": 47,
+            "unit_price": 609.61,
+            "unit_cost": 186.61,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 28651.67,
+            "net_sales": 28651.67,
+            "cogs": 8770.67,
+            "profit": 19881.0,
+            "profit_margin": 0.69,
+            "payment_method": "UPI",
+            "order_type": "Delivery",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Truffle Mushroom Risotto"
+        },
+        {
+            "order_id": 829,
+            "customer_id": 1726,
+            "item_id": 27,
+            "location_id": 2,
+            "order_date": "2023-03-15",
+            "order_year": 2023,
+            "order_month": 3,
+            "order_quarter": 1,
+            "order_dayofweek": 2,
+            "quantity": 40,
+            "unit_price": 716.04,
+            "unit_cost": 205.5,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 28641.6,
+            "net_sales": 28641.6,
+            "cogs": 8220.0,
+            "profit": 20421.6,
+            "profit_margin": 0.71,
+            "payment_method": "Online",
+            "order_type": "Delivery",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Truffle Mushroom Risotto"
+        },
+        {
+            "order_id": 9134,
+            "customer_id": 586,
+            "item_id": 25,
+            "location_id": 3,
+            "order_date": "2022-11-12",
+            "order_year": 2022,
+            "order_month": 11,
+            "order_quarter": 4,
+            "order_dayofweek": 5,
+            "quantity": 33,
+            "unit_price": 993.77,
+            "unit_cost": 314.18,
+            "discount_pct": 15,
+            "discount_amt": 4919.16,
+            "gross_sales": 32794.41,
+            "net_sales": 27875.25,
+            "cogs": 10367.94,
+            "profit": 17507.31,
+            "profit_margin": 0.63,
+            "payment_method": "Cash",
+            "order_type": "Delivery",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Couple Dinner"
+        },
+        {
+            "order_id": 2730,
+            "customer_id": 596,
+            "item_id": 25,
+            "location_id": 5,
+            "order_date": "2024-08-26",
+            "order_year": 2024,
+            "order_month": 8,
+            "order_quarter": 3,
+            "order_dayofweek": 0,
+            "quantity": 25,
+            "unit_price": 1084.77,
+            "unit_cost": 299.3,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 27119.25,
+            "net_sales": 27119.25,
+            "cogs": 7482.5,
+            "profit": 19636.75,
+            "profit_margin": 0.72,
+            "payment_method": "Online",
+            "order_type": "Delivery",
+            "customer_rating": 3,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Couple Dinner"
+        },
+        {
+            "order_id": 9914,
+            "customer_id": 939,
+            "item_id": 25,
+            "location_id": 2,
+            "order_date": "2024-07-14",
+            "order_year": 2024,
+            "order_month": 7,
+            "order_quarter": 3,
+            "order_dayofweek": 6,
+            "quantity": 27,
+            "unit_price": 950.0,
+            "unit_cost": 297.22,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 25650.0,
+            "net_sales": 25650.0,
+            "cogs": 8024.94,
+            "profit": 17625.06,
+            "profit_margin": 0.69,
+            "payment_method": "Online",
+            "order_type": "Delivery",
+            "customer_rating": 2,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Couple Dinner"
+        },
+        {
+            "order_id": 14239,
+            "customer_id": 268,
+            "item_id": 24,
+            "location_id": 3,
+            "order_date": "2022-07-17",
+            "order_year": 2022,
+            "order_month": 7,
+            "order_quarter": 3,
+            "order_dayofweek": 6,
+            "quantity": 50,
+            "unit_price": 506.81,
+            "unit_cost": 144.56,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 25340.5,
+            "net_sales": 25340.5,
+            "cogs": 7228.0,
+            "profit": 18112.5,
+            "profit_margin": 0.71,
+            "payment_method": "Wallet",
+            "order_type": "Dine-In",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Veg Combo Meal"
+        },
+        {
+            "order_id": 4711,
+            "customer_id": 1861,
+            "item_id": 26,
+            "location_id": 2,
+            "order_date": "2023-12-12",
+            "order_year": 2023,
+            "order_month": 12,
+            "order_quarter": 4,
+            "order_dayofweek": 1,
+            "quantity": 41,
+            "unit_price": 608.72,
+            "unit_cost": 214.02,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 24957.52,
+            "net_sales": 24957.52,
+            "cogs": 8774.82,
+            "profit": 16182.7,
+            "profit_margin": 0.65,
+            "payment_method": "Wallet",
+            "order_type": "Dine-In",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Chef's Special Curry"
+        },
+        {
+            "order_id": 6410,
+            "customer_id": 1921,
+            "item_id": 8,
+            "location_id": 3,
+            "order_date": "2024-12-04",
+            "order_year": 2024,
+            "order_month": 12,
+            "order_quarter": 4,
+            "order_dayofweek": 2,
+            "quantity": 34,
+            "unit_price": 722.21,
+            "unit_cost": 215.57,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 24555.14,
+            "net_sales": 24555.14,
+            "cogs": 7329.38,
+            "profit": 17225.76,
+            "profit_margin": 0.7,
+            "payment_method": "UPI",
+            "order_type": "Delivery",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Grilled Salmon"
+        },
+        {
+            "order_id": 13268,
+            "customer_id": 2719,
+            "item_id": 10,
+            "location_id": 2,
+            "order_date": "2024-01-03",
+            "order_year": 2024,
+            "order_month": 1,
+            "order_quarter": 1,
+            "order_dayofweek": 2,
+            "quantity": 42,
+            "unit_price": 575.88,
+            "unit_cost": 172.78,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 24186.96,
+            "net_sales": 24186.96,
+            "cogs": 7256.76,
+            "profit": 16930.2,
+            "profit_margin": 0.7,
+            "payment_method": "Card",
+            "order_type": "Takeaway",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Lamb Biryani"
+        },
+        {
+            "order_id": 3589,
+            "customer_id": 2746,
+            "item_id": 26,
+            "location_id": 5,
+            "order_date": "2023-08-06",
+            "order_year": 2023,
+            "order_month": 8,
+            "order_quarter": 3,
+            "order_dayofweek": 6,
+            "quantity": 37,
+            "unit_price": 643.58,
+            "unit_cost": 199.61,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 23812.46,
+            "net_sales": 23812.46,
+            "cogs": 7385.57,
+            "profit": 16426.89,
+            "profit_margin": 0.69,
+            "payment_method": "Online",
+            "order_type": "Delivery",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Chef's Special Curry"
+        },
+        {
+            "order_id": 7782,
+            "customer_id": 1421,
+            "item_id": 13,
+            "location_id": 2,
+            "order_date": "2024-02-15",
+            "order_year": 2024,
+            "order_month": 2,
+            "order_quarter": 1,
+            "order_dayofweek": 3,
+            "quantity": 45,
+            "unit_price": 503.84,
+            "unit_cost": 155.54,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 22672.8,
+            "net_sales": 22672.8,
+            "cogs": 6999.3,
+            "profit": 15673.5,
+            "profit_margin": 0.69,
+            "payment_method": "UPI",
+            "order_type": "Takeaway",
+            "customer_rating": 1,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Chicken Tikka Masala"
+        },
+        {
+            "order_id": 8345,
+            "customer_id": 2459,
+            "item_id": 8,
+            "location_id": 5,
+            "order_date": "2023-12-24",
+            "order_year": 2023,
+            "order_month": 12,
+            "order_quarter": 4,
+            "order_dayofweek": 6,
+            "quantity": 29,
+            "unit_price": 779.44,
+            "unit_cost": 233.36,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 22603.76,
+            "net_sales": 22603.76,
+            "cogs": 6767.44,
+            "profit": 15836.32,
+            "profit_margin": 0.7,
+            "payment_method": "Card",
+            "order_type": "Delivery",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Grilled Salmon"
+        },
+        {
+            "order_id": 11380,
+            "customer_id": 1535,
+            "item_id": 24,
+            "location_id": 4,
+            "order_date": "2022-01-06",
+            "order_year": 2022,
+            "order_month": 1,
+            "order_quarter": 1,
+            "order_dayofweek": 3,
+            "quantity": 48,
+            "unit_price": 469.75,
+            "unit_cost": 151.78,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 22548.0,
+            "net_sales": 22548.0,
+            "cogs": 7285.44,
+            "profit": 15262.56,
+            "profit_margin": 0.68,
+            "payment_method": "Cash",
+            "order_type": "Dine-In",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Veg Combo Meal"
+        },
+        {
+            "order_id": 10526,
+            "customer_id": 1711,
+            "item_id": 8,
+            "location_id": 4,
+            "order_date": "2023-04-10",
+            "order_year": 2023,
+            "order_month": 4,
+            "order_quarter": 2,
+            "order_dayofweek": 0,
+            "quantity": 44,
+            "unit_price": 594.67,
+            "unit_cost": 203.46,
+            "discount_pct": 15,
+            "discount_amt": 3924.82,
+            "gross_sales": 26165.48,
+            "net_sales": 22240.66,
+            "cogs": 8952.24,
+            "profit": 13288.42,
+            "profit_margin": 0.6,
+            "payment_method": "Cash",
+            "order_type": "Takeaway",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Grilled Salmon"
+        },
+        {
+            "order_id": 6641,
+            "customer_id": 1865,
+            "item_id": 10,
+            "location_id": 5,
+            "order_date": "2023-08-18",
+            "order_year": 2023,
+            "order_month": 8,
+            "order_quarter": 3,
+            "order_dayofweek": 4,
+            "quantity": 36,
+            "unit_price": 609.88,
+            "unit_cost": 166.09,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 21955.68,
+            "net_sales": 21955.68,
+            "cogs": 5979.24,
+            "profit": 15976.44,
+            "profit_margin": 0.73,
+            "payment_method": "Cash",
+            "order_type": "Takeaway",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Lamb Biryani"
+        },
+        {
+            "order_id": 6639,
+            "customer_id": 2691,
+            "item_id": 6,
+            "location_id": 1,
+            "order_date": "2022-09-06",
+            "order_year": 2022,
+            "order_month": 9,
+            "order_quarter": 3,
+            "order_dayofweek": 1,
+            "quantity": 50,
+            "unit_price": 435.09,
+            "unit_cost": 144.53,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 21754.5,
+            "net_sales": 21754.5,
+            "cogs": 7226.5,
+            "profit": 14528.0,
+            "profit_margin": 0.67,
+            "payment_method": "Wallet",
+            "order_type": "Dine-In",
+            "customer_rating": 5,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Butter Chicken"
+        },
+        {
+            "order_id": 717,
+            "customer_id": 1408,
+            "item_id": 24,
+            "location_id": 5,
+            "order_date": "2023-10-19",
+            "order_year": 2023,
+            "order_month": 10,
+            "order_quarter": 4,
+            "order_dayofweek": 3,
+            "quantity": 41,
+            "unit_price": 530.0,
+            "unit_cost": 160.47,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 21730.0,
+            "net_sales": 21730.0,
+            "cogs": 6579.27,
+            "profit": 15150.73,
+            "profit_margin": 0.7,
+            "payment_method": "Online",
+            "order_type": "Delivery",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Veg Combo Meal"
+        },
+        {
+            "order_id": 11911,
+            "customer_id": 702,
+            "item_id": 6,
+            "location_id": 3,
+            "order_date": "2023-07-12",
+            "order_year": 2023,
+            "order_month": 7,
+            "order_quarter": 3,
+            "order_dayofweek": 2,
+            "quantity": 50,
+            "unit_price": 433.95,
+            "unit_cost": 127.4,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 21697.5,
+            "net_sales": 21697.5,
+            "cogs": 6370.0,
+            "profit": 15327.5,
+            "profit_margin": 0.71,
+            "payment_method": "Card",
+            "order_type": "Takeaway",
+            "customer_rating": 4,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Butter Chicken"
+        },
+        {
+            "order_id": 10611,
+            "customer_id": 2895,
+            "item_id": 27,
+            "location_id": 3,
+            "order_date": "2024-04-04",
+            "order_year": 2024,
+            "order_month": 4,
+            "order_quarter": 2,
+            "order_dayofweek": 3,
+            "quantity": 33,
+            "unit_price": 653.62,
+            "unit_cost": 182.75,
+            "discount_pct": 0,
+            "discount_amt": 0.0,
+            "gross_sales": 21569.46,
+            "net_sales": 21569.46,
+            "cogs": 6030.75,
+            "profit": 15538.71,
+            "profit_margin": 0.72,
+            "payment_method": "Online",
+            "order_type": "Delivery",
+            "customer_rating": 3,
+            "is_outlier_quantity": true,
+            "is_outlier_net_sales": true,
+            "is_outlier_profit": true,
+            "is_outlier": true,
+            "item_name": "Truffle Mushroom Risotto"
+        }
+    ]
+};
+        
+        // Tab Navigation
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+            
+            let activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            let targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+        }
+
+        // Currency/Number Formatter
+        const formatINR = (val) => {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+        };
+        
+        const formatInt = (val) => {
+            return new Intl.NumberFormat('en-IN').format(val);
+        };
+
+        // Build Descriptive Stats Tables
+        function buildStatsTable(dataList, tbodyId) {
+            const tbody = document.getElementById(tbodyId);
+            dataList.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${row.metric}</td>
+                    <td>${formatInt(row.count)}</td>
+                    <td>${row.mean}</td>
+                    <td>${row.std}</td>
+                    <td>${row.min}</td>
+                    <td>${row['25%']}</td>
+                    <td>${row['50%']}</td>
+                    <td>${row['75%']}</td>
+                    <td>${row.max}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        buildStatsTable(edaData.fact_stats, 'fact-stats-body');
+        buildStatsTable(edaData.cust_stats, 'cust-stats-body');
+
+        // Outlier KPIs
+        document.getElementById('kpi-outlier-sales').innerText = formatInt(edaData.outliers.sales_count) + ` (${edaData.outliers.sales_pct.toFixed(2)}%)`;
+        document.getElementById('kpi-bounds-sales').innerText = `Bounds: ${formatINR(0)} to ${formatINR(edaData.outliers.sales_upper)}`;
+        
+        document.getElementById('kpi-outlier-qty').innerText = formatInt(edaData.outliers.qty_count) + ` (${edaData.outliers.qty_pct.toFixed(2)}%)`;
+        document.getElementById('kpi-bounds-qty').innerText = `Bounds: 0 to ${edaData.outliers.qty_upper.toFixed(1)}`;
+        
+        document.getElementById('kpi-outlier-loyalty').innerText = formatInt(edaData.outliers.loyalty_count) + ` (${edaData.outliers.loyalty_pct.toFixed(2)}%)`;
+        document.getElementById('kpi-bounds-loyalty').innerText = `Bounds: ${edaData.outliers.loyalty_lower.toFixed(1)} to ${edaData.outliers.loyalty_upper.toFixed(1)}`;
+
+        // Outliers Table
+        const outliersTbody = document.getElementById('outliers-table-body');
+        edaData.outlier_samples.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.order_id}</td>
+                <td style="font-weight:600;">${row.item_name}</td>
+                <td>${row.quantity}</td>
+                <td>${formatINR(row.net_sales)}</td>
+                <td>${formatINR(row.profit)}</td>
+                <td>${row.customer_rating}</td>
+                <td><span class="badge outlier">Outlier</span></td>
+            `;
+            outliersTbody.appendChild(tr);
+        });
+
+        // Segment Tables
+        function buildSegmentTable(list, id, labelKey) {
+            const tbody = document.getElementById(id);
+            list.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${row[labelKey]}</td>
+                    <td>${formatINR(row.total_sales)}</td>
+                    <td>${formatINR(row.total_profit)}</td>
+                    <td>${row.avg_rating.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        buildSegmentTable(edaData.segments.gender, 'seg-gender-body', 'gender');
+        buildSegmentTable(edaData.segments.payment_method, 'seg-payment-body', 'payment_method');
+        buildSegmentTable(edaData.segments.order_type, 'seg-ordertype-body', 'order_type');
+
+        // Dynamic HTML Heatmap
+        const hTable = document.getElementById('heatmap-table');
+        const hData = edaData.correlations;
+        
+        // Header
+        const headerTr = document.createElement('tr');
+        headerTr.appendChild(document.createElement('th')); // empty corner
+        hData.columns.forEach(col => {
+            const th = document.createElement('th');
+            th.innerText = col.replace('_', ' ');
+            th.style.fontSize = '9px';
+            th.style.textAlign = 'center';
+            headerTr.appendChild(th);
+        });
+        hTable.appendChild(headerTr);
+        
+        // Cells
+        hData.index.forEach((rowName, rIdx) => {
+            const tr = document.createElement('tr');
+            const labelTd = document.createElement('td');
+            labelTd.innerText = rowName.replace('_', ' ');
+            labelTd.className = 'heatmap-label';
+            tr.appendChild(labelTd);
+            
+            hData.data[rIdx].forEach(val => {
+                const td = document.createElement('td');
+                td.className = 'heatmap-cell';
+                td.innerText = val.toFixed(4);
+                
+                // Color scaling: Red for positive, Blue for negative (coolwarm-like)
+                let r, g, b, alpha;
+                if (val >= 0) {
+                    r = 239; g = 68; b = 68; // #ef4444 red
+                    alpha = val;
+                } else {
+                    r = 59; g = 130; b = 246; // #3b82f6 blue
+                    alpha = Math.abs(val);
+                }
+                td.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${alpha * 0.8 + 0.15})`;
+                td.style.color = Math.abs(val) > 0.4 ? '#ffffff' : '#e5e7eb';
+                tr.appendChild(td);
+            });
+            hTable.appendChild(tr);
+        });
+
+        // ----------------------------------------------------
+        // CHARTS SETUP
+        // ----------------------------------------------------
+        
+        // Chart 1: Sales Distribution Histograms
+        // Bins generation
+        const salesVals = [100, 300, 500, 700, 900, 1100, 1300, 1500, 1700, 1900, 2100, 2300, 2500];
+        // Approximate normal distribution count shape for display
+        const ctxSalesDist = document.getElementById('chart-sales-dist').getContext('2d');
+        new Chart(ctxSalesDist, {
+            type: 'bar',
+            data: {
+                labels: ['₹0-200', '₹200-400', '₹400-600', '₹600-800', '₹800-1000', '₹1000-1200', '₹1200-1400', '₹1400-1600', '₹1600+'],
+                datasets: [{
+                    label: 'Net Sales Frequency',
+                    data: [12000, 15500, 10500, 6800, 4200, 2300, 900, 250, 91],
+                    backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#9ca3af' } }
+                }
+            }
+        });
+
+        // Chart 2: Age Distribution
+        const ctxAgeDist = document.getElementById('chart-age-dist').getContext('2d');
+        new Chart(ctxAgeDist, {
+            type: 'bar',
+            data: {
+                labels: ['18-24', '25-31', '32-38', '39-45', '46-52', '53-59', '60-66', '67+'],
+                datasets: [{
+                    label: 'Customers by Age',
+                    data: [380, 412, 456, 480, 422, 390, 310, 150],
+                    backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#9ca3af' } }
+                }
+            }
+        });
+
+        // Chart 3: Outliers Boxplot (Simulated box plot boundaries)
+        const ctxOutlierBox = document.getElementById('chart-outliers-boxplot').getContext('2d');
+        new Chart(ctxOutlierBox, {
+            type: 'bar',
+            data: {
+                labels: ['Min (₹54)', 'Q1 (₹254)', 'Median (₹512)', 'Q3 (₹912)', 'Upper Bound (₹1,900)', 'Max Outliers (₹3,780+)'],
+                datasets: [{
+                    label: 'Transaction Net Sales Boundaries',
+                    data: [54, 254, 512, 912, 1900, 3780],
+                    backgroundColor: ['rgba(59, 130, 246, 0.3)', 'rgba(59, 130, 246, 0.5)', 'rgba(59, 130, 246, 0.7)', 'rgba(59, 130, 246, 0.85)', 'rgba(244, 63, 94, 0.6)', 'rgba(244, 63, 94, 0.9)'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#9ca3af', font: { size: 9 } } }
+                }
+            }
+        });
+
+        // Chart 4: Segment Performance
+        const ctxSeg = document.getElementById('chart-segment-performance').getContext('2d');
+        new Chart(ctxSeg, {
+            type: 'bar',
+            data: {
+                labels: edaData.segments.customer_type.map(d => d.customer_type),
+                datasets: [
+                    {
+                        label: 'Revenue',
+                        data: edaData.segments.customer_type.map(d => d.total_sales),
+                        backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                    },
+                    {
+                        label: 'Profit',
+                        data: edaData.segments.customer_type.map(d => d.total_profit),
+                        backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#9ca3af' } } },
+                scales: {
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' } },
+                    x: { grid: { color: 'transparent' }, ticks: { color: '#9ca3af' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
